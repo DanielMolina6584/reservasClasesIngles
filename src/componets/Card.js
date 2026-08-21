@@ -13,6 +13,12 @@ export default function Card ({clase, onPress}) {
          <View>
             <EtiquetaNivel nivel={clase.nivel}/>
          </View>
+         <View>
+            <Text> profesor={clase.profesor} </Text>
+         </View>
+         --nombre del profesor
+         --horario
+         --precio
 
         </Pressable>
     )
