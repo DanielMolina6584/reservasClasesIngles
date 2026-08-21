@@ -1,20 +1,36 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Card from './src/componets/Card';
+import { CLASES } from './src/data/clases';
+import { colors, spacing, typography } from './src/theme';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.titulo}>Reserva tu clase de inglés</Text>
+      <Text style={styles.subtitulo}>Elige un profesor, horario y precio</Text>
+
+      {CLASES.map((clase) => (
+        <Card key={clase.id} clase={clase} />
+      ))}
+
       <StatusBar style="auto" />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: spacing.lg,
+    paddingTop: spacing.xxl,
+    backgroundColor: colors.fondo,
+  },
+  titulo: {
+    ...typography.titulo,
+    marginBottom: spacing.xs,
+  },
+  subtitulo: {
+    ...typography.secundario,
+    marginBottom: spacing.xl,
   },
 });
