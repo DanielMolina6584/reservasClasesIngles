@@ -1,36 +1,30 @@
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import Card from './src/componets/Card';
-import { CLASES } from './src/data/clases';
-import { colors, spacing, typography } from './src/theme';
+import {navigatecontainer} from '@react-navigation/native';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
+import ClassesStack from './src/navigation/ClasesStack';
+
+const temaNavegacion = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: colors.fondo,
+    card: colors.superficie,
+    primary: colors.primario,
+    text: colors.texto,
+    border: colors.borde,
+  },
+};
 
 export default function App() {
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.titulo}>Reserva tu clase de inglés</Text>
-      <Text style={styles.subtitulo}>Elige un profesor, horario y precio</Text>
-
-      {CLASES.map((clase) => (
-        <Card key={clase.id} clase={clase} />
-      ))}
-
-      <StatusBar style="auto" />
-    </ScrollView>
+    <SafeAreaProvider>
+      <NavigationContainer theme={temaNavegacion}>
+        <StatusBar style='dark' />
+        <ClassesStack/>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    padding: spacing.lg,
-    paddingTop: spacing.xxl,
-    backgroundColor: colors.fondo,
-  },
-  titulo: {
-    ...typography.titulo,
-    marginBottom: spacing.xs,
-  },
-  subtitulo: {
-    ...typography.secundario,
-    marginBottom: spacing.xl,
-  },
-});
+
