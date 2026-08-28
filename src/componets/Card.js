@@ -1,34 +1,31 @@
 import React from 'react';
-import { View, Text, Image, Pressable, StyleSheet} from 'react-native';
+import{View,Text,Image,Pressable, Stylesheet}from 'react-native'
 import EtiquetaNivel from './EtiquetaNivel';
-import { colors, radius, spacing, typography } from '../theme';
-import {formatearPrecio, CLASES} from '../data/clases';
-
-export default function Card ({clase, onPress}) {
-    return(
-        <Pressable
-            onPress={onPress}
-        >
-         <Image source={{uri: clase.image}} />
-         <View>
-            <EtiquetaNivel nivel={clase.nivel}/>
-         </View>
-         <Text style={style.titulo} numberOfLines={2}>{clase.titulo}
-         </Text>
-         <View>
-            <Text>{clase.profesor} </Text>
-         </View>
-         <View>
-            <Text>{clase.horario} </Text>
-         </View>
-         <View>
-            <Text>{clase.precio} </Text>
-         </View>
-        
-        </Pressable>
-    )
+import {colors,radius,spacing,typography} from '.../theme';
+import { formatearPrecio } from '../data/clases';
+ 
+ 
+export default function Card ({urlimagen,onpress,ancho}){
+ 
+return(
+<Pressable
+   onpress={onpress}
+>
+ 
+<image source={{uri:clase.image}}/>
+   <view>
+      <EtiquetaNivel nivel={clase.nivel}/>
+   </view>
+    <view>
+      <text> {clase.profesor}</text>
+    </view>
+   
+ 
+</Pressable>
+ 
+)
 }
-
+ 
 const style = StyleSheet.create({
   tarjeta: {
     backgroundColor: colors.superficie,
