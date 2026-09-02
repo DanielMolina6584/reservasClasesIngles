@@ -10,19 +10,23 @@ import { colors, radius, spacing, typography } from '../theme';
 import {formatearPrecio, CLASES, NIVELES} from '../data/clases';
 
 export default function ClasesScreen ({navigation}) {
+    const insets =useSafeAreaInsets();
     const [nivel, setNivel] = useState()
     const [busqueda, setBusqueda] = useState('')
 
     return(
-        <view>
+        <view style ={[style.pantalla, {paddingTop: insets.top + spacing.md}]}
+                   
+        
+        >
             <View>
-                <text>Aplicación para clases de Ingles</text>
+                <Text>Aplicación para clases de Ingles</Text>
                 <Ionicons name="search" size={18} color={colors.textoSuave} />
                 <TextInput
                     placeholder="Buscar por nivel"
                     value={busqueda}
                     onChangeText={setBusqueda}
-                    autocorrect={false}
+                    autoCorrect={false}
                 />
                 {
                     busqueda.length > 0 && (
