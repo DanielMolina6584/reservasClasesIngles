@@ -1,24 +1,16 @@
-import react from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ClasesScreen from '../screens/ClasesScreen';
+import React from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import StartScreen from "../screens/ClasesScreen";
 
 const Stack = createNativeStackNavigator();
 
 export default function ClasesStack() {
     return (
-        <Stack.Navigator
-        screenOptions={{
-            title: 'Clases de Ingles',
-        }}
-        >
+        <Stack.Navigator>
             <Stack.Screen 
-                name="Home"
-
-                component={ClasesScreen}
-
-                options={{
-                    headerShown: false
-                }}
+                name="Clases" 
+                component={StartScreen} 
+                options={{ headerShown: false }}
             />
         </Stack.Navigator>
     )
