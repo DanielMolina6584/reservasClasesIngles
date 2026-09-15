@@ -8,6 +8,7 @@ export const colors = {
     border: 'rgb(130, 130, 215)',
     borde: 'rgb(130, 130, 215)',
     primario: '#6C5CE7',
+    primarioSuave: '#ede9fe',
     background: '#8d8d8d',
 }
 export const spacing = {
@@ -15,7 +16,8 @@ export const spacing = {
     sm:8,
     md:12,
     lg:16,
-    xl:18
+    xl:18,
+    xxl:32,
 }
 
 export const radius = {
