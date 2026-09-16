@@ -6,8 +6,6 @@ export default function EtiquetaNivel( {nivel }){
     return (
         <View style={[styles.contenedor, {backgroundColor: colors.background}]}>
             <Text style={styles.texto}> { nivel } </Text>
-
-
         </View>
     )
 }
