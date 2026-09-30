@@ -13,7 +13,7 @@ export const CLASES = [
     duracion: 50,
     modalidad: 'Virtual',
     rating: 4.8,
-    cupos: 6,
+    cupos: 2,
     horarios: ['Lun 7:00 a.m.', 'Mié 7:00 a.m.', 'Vie 6:00 p.m.'],
   },
   {

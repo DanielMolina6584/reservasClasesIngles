@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,14 @@ import { colors, radius, spacing, typhography } from '../theme';
 export default function DetalleClaseScreen({ route }) {
   const insets = useSafeAreaInsets();
   const { clase } = route.params;
+  const [cuposDisponibles, setCuposDisponibles] = useState(clase.cupos);
+
+  const reservarClase = () => {
+    Alert.alert(
+      'Reserva solicitada'
+    );
+    setCuposDisponibles((cuposActuales) => (cuposActuales - 1));
+  };
 
   return (
     <View style={styles.pantalla}>
@@ -40,7 +48,7 @@ export default function DetalleClaseScreen({ route }) {
           <View style={styles.datos}>
             <Dato icono="cash-outline" etiqueta="Precio" valor={formatearPrecio(clase.precio)} />
             <Dato icono="time-outline" etiqueta="Duración" valor={`${clase.duracion} min`} />
-            <Dato icono="people-outline" etiqueta="Cupos" valor={`${clase.cupos}`} />
+            <Dato icono="people-outline" etiqueta="Cupos" valor={`${cuposDisponibles}`} />
           </View>
 
           <Text style={styles.subtitulo}>Horarios disponibles</Text>
@@ -60,8 +68,14 @@ export default function DetalleClaseScreen({ route }) {
           <Text style={styles.etiqueta}>Precio por clase</Text>
           <Text style={styles.precio}>{formatearPrecio(clase.precio)}</Text>
         </View>
-        <Pressable style={styles.boton}>
-          <Text style={styles.textoBoton}>Reservar clase</Text>
+        <Pressable
+          style={[styles.boton, cuposDisponibles === 0 && styles.botonDeshabilitado]}
+          onPress={reservarClase}
+          disabled={cuposDisponibles === 0}
+        >
+          <Text style={styles.textoBoton}>
+            {cuposDisponibles === 0 ? 'Agotado' : 'Reservar clase'}
+          </Text>
         </Pressable>
       </View>
     </View>
@@ -168,5 +182,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
+  botonDeshabilitado: { backgroundColor: colors.textoSuave },
   textoBoton: { color: '#FFFFFF', fontWeight: '800' },
 });
