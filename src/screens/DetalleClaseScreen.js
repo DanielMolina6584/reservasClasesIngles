@@ -1,21 +1,43 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import EtiquetaNivel from '../componets/EtiquetaNivel';
 import { formatearPrecio } from '../data/clases';
+import useReserva from '../hooks/useReserva';
 import { colors, radius, spacing, typhography } from '../theme';
 
 export default function DetalleClaseScreen({ route }) {
   const insets = useSafeAreaInsets();
   const { clase } = route.params;
   const [cuposDisponibles, setCuposDisponibles] = useState(clase.cupos);
+  const [horarioSeleccionado, setHorarioSeleccionado] = useState(clase.horarios[0] ?? null);
+  const [reservando, setReservando] = useState(false);
+  const reservandoRef = useRef(false);
+  const { agregarReserva, cargando } = useReserva();
 
-  const reservarClase = () => {
-    Alert.alert(
-      'Reserva solicitada'
-    );
-    setCuposDisponibles((cuposActuales) => (cuposActuales - 1));
+  const reservarClase = async () => {
+    if (!horarioSeleccionado || cuposDisponibles <= 0 || reservandoRef.current) {
+      return;
+    }
+
+    reservandoRef.current = true;
+    setReservando(true);
+    try {
+      const agregada = await agregarReserva(clase, horarioSeleccionado);
+      if (!agregada) {
+        Alert.alert('Horario ya reservado', 'Ya tienes una reserva para este horario.');
+        return;
+      }
+      setCuposDisponibles((cuposActuales) => cuposActuales - 1);
+      Alert.alert('Reserva solicitada', `Reserva confirmada: ${clase.titulo}`);
+    } catch (error) {
+      Alert.alert('Error al reservar', 'No se pudo guardar la reserva. Inténtalo de nuevo.');
+      console.error('Error guardando la reserva:', error);
+    } finally {
+      reservandoRef.current = false;
+      setReservando(false);
+    }
   };
 
   return (
@@ -54,10 +76,23 @@ export default function DetalleClaseScreen({ route }) {
           <Text style={styles.subtitulo}>Horarios disponibles</Text>
           <View style={styles.horarios}>
             {clase.horarios.map((horario) => (
-              <View key={horario} style={styles.horario}>
-                <Ionicons name="calendar-outline" size={16} color={colors.primario} />
+              <Pressable
+                key={horario}
+                style={[
+                  styles.horario,
+                  horario === horarioSeleccionado && styles.horarioSeleccionado,
+                ]}
+                onPress={() => setHorarioSeleccionado(horario)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: horario === horarioSeleccionado }}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={16}
+                  color={horario === horarioSeleccionado ? colors.primario : colors.textoSuave}
+                />
                 <Text style={styles.textoHorario}>{horario}</Text>
-              </View>
+              </Pressable>
             ))}
           </View>
         </View>
@@ -71,10 +106,14 @@ export default function DetalleClaseScreen({ route }) {
         <Pressable
           style={[styles.boton, cuposDisponibles === 0 && styles.botonDeshabilitado]}
           onPress={reservarClase}
-          disabled={cuposDisponibles === 0}
+          disabled={cargando || reservando || cuposDisponibles === 0 || !horarioSeleccionado}
         >
           <Text style={styles.textoBoton}>
-            {cuposDisponibles === 0 ? 'Agotado' : 'Reservar clase'}
+            {cuposDisponibles === 0
+              ? 'Agotado'
+              : reservando || cargando
+                ? 'Cargando...'
+                : 'Reservar clase'}
           </Text>
         </Pressable>
       </View>
@@ -160,6 +199,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     backgroundColor: colors.superficie,
     borderRadius: radius.md,
+  },
+  horarioSeleccionado: {
+    borderWidth: 1,
+    borderColor: colors.primario,
+    backgroundColor: colors.primarioSuave,
   },
   textoHorario: { color: colors.texto, fontSize: 14 },
   barra: {

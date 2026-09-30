@@ -4,6 +4,7 @@ import {NavigationContainer, DefaultTheme} from '@react-navigation/native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import ClasesStack from './src/navigation/ClasesStack';
 import {colors} from './src/theme/';
+import {ReservaProvider} from './src/context/ReservasContext';
 
 const temaNavegacion = {
   ...DefaultTheme,
@@ -20,12 +21,13 @@ const temaNavegacion = {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={temaNavegacion}>
-        <StatusBar style='white' />
-        <ClasesStack/>
-      </NavigationContainer>
+      <ReservaProvider>
+        <NavigationContainer theme={temaNavegacion}>
+          <StatusBar style='white' />
+          <ClasesStack/>
+        </NavigationContainer>
+      </ReservaProvider>
     </SafeAreaProvider>
   );
 }
-
 
