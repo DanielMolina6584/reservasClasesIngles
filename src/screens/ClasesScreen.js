@@ -2,12 +2,15 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Card from '../componets/Card';
-import EstadoVacio from '../componets/EstadoVacio';
-import NivelChip from '../componets/NivelChip';
+import Card from '../components/Card';
+import EstadoVacio from '../components/EstadoVacio';
+import NivelChip from '../components/NivelChip';
 import useResponsive from '../hooks/useResponsive';
 import { CLASES, NIVELES } from '../data/clases';
-import { colors, radius, spacing, typhography } from '../theme';
+import { colors, radius, spacing, typography } from '../theme';
+
+// Quita tildes para que "ingles" encuentre "Inglés".
+const normalizar = (texto) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 export default function ClasesScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -16,18 +19,18 @@ export default function ClasesScreen({ navigation }) {
   const [busqueda, setBusqueda] = useState('');
 
   const resultados = useMemo(() => {
-    const texto = busqueda.trim().toLowerCase();
+    const texto = normalizar(busqueda.trim());
     return CLASES.filter((clase) => {
       const coincideNivel = nivel === 'Todos' || clase.nivel === nivel;
       const coincideTexto = !texto
-        || clase.profesor.nombre.toLowerCase().includes(texto)
-        || clase.titulo.toLowerCase().includes(texto);
+        || normalizar(clase.profesor.nombre).includes(texto)
+        || normalizar(clase.titulo).includes(texto);
       return coincideNivel && coincideTexto;
     });
   }, [busqueda, nivel]);
 
   return (
-    <View style={[styles.pantalla, { paddingTop: insets.top + spacing.md }]}>
+    <View style={[styles.pantalla, { paddingTop: insets.top + spacing.md, paddingHorizontal }]}>
       <Text style={styles.titulo}>Aplicación de reservas de clases</Text>
       <View style={styles.buscador}>
         <Ionicons name="search" size={18} color={colors.primario} />
@@ -69,7 +72,7 @@ export default function ClasesScreen({ navigation }) {
         )}
         numColumns={columnas}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal, paddingBottom: insets.bottom + spacing.xl, flexGrow: 1 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl, flexGrow: 1 }}
         columnWrapperStyle={columnas > 1 ? styles.fila : undefined}
         ListEmptyComponent={
           <EstadoVacio
@@ -84,8 +87,8 @@ export default function ClasesScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: colors.fondo, paddingHorizontal: spacing.lg },
-  titulo: { ...typhography.titulo, marginBottom: spacing.lg },
+  pantalla: { flex: 1, backgroundColor: colors.fondo },
+  titulo: { ...typography.titulo, marginBottom: spacing.lg },
   buscador: {
     flexDirection: 'row',
     alignItems: 'center',

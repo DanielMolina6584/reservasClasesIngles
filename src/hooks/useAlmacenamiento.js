@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function useAlmacenamiento(clave, valorInicial) {
   const [valor, setValor] = useState(valorInicial);
   const [listo, setListo] = useState(false);
+  const esLista = Array.isArray(valorInicial);
 
   useEffect(() => {
     let activo = true;
@@ -13,8 +14,8 @@ export default function useAlmacenamiento(clave, valorInicial) {
         const guardado = await AsyncStorage.getItem(clave);
         if (activo && guardado !== null) {
           const valorGuardado = JSON.parse(guardado);
-          if (!Array.isArray(valorGuardado)) {
-            throw new Error(`El valor guardado para ${clave} no es una lista.`);
+          if (Array.isArray(valorGuardado) !== esLista) {
+            throw new Error(`El valor guardado para ${clave} no tiene el tipo esperado.`);
           }
           setValor(valorGuardado);
         }
@@ -32,7 +33,7 @@ export default function useAlmacenamiento(clave, valorInicial) {
     return () => {
       activo = false;
     };
-  }, [clave]);
+  }, [clave, esLista]);
 
   const actualizar = useCallback(async (nuevoValor) => {
     await AsyncStorage.setItem(clave, JSON.stringify(nuevoValor));

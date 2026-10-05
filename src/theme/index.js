@@ -5,7 +5,6 @@ export const colors = {
     superficie: '#dbeafe',
     texto: '#000000',
     textoSuave: '#6b7280',
-    border: 'rgb(130, 130, 215)',
     borde: 'rgb(130, 130, 215)',
     primario: '#6C5CE7',
     primarioSuave: '#ede9fe',
@@ -27,8 +26,8 @@ export const radius = {
     full: 999
 }
 
-export const typhography = {
+export const typography = {
     titulo: { fontSize: 20, fontWeight: '800', color: colors.texto },
 }
 
-export default {colors, spacing, radius, typhography}
+export default {colors, spacing, radius, typography}

@@ -23,7 +23,7 @@ export default function App() {
     <SafeAreaProvider>
       <ReservaProvider>
         <NavigationContainer theme={temaNavegacion}>
-          <StatusBar style='white' />
+          <StatusBar style="dark" />
           <ClasesStack/>
         </NavigationContainer>
       </ReservaProvider>

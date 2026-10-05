@@ -2,19 +2,19 @@ import React, { useRef, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import EtiquetaNivel from '../componets/EtiquetaNivel';
+import EtiquetaNivel from '../components/EtiquetaNivel';
 import { formatearPrecio } from '../data/clases';
 import useReserva from '../hooks/useReserva';
-import { colors, radius, spacing, typhography } from '../theme';
+import { colors, radius, spacing, typography } from '../theme';
 
 export default function DetalleClaseScreen({ route }) {
   const insets = useSafeAreaInsets();
   const { clase } = route.params;
-  const [cuposDisponibles, setCuposDisponibles] = useState(clase.cupos);
   const [horarioSeleccionado, setHorarioSeleccionado] = useState(clase.horarios[0] ?? null);
   const [reservando, setReservando] = useState(false);
   const reservandoRef = useRef(false);
-  const { agregarReserva, cargando } = useReserva();
+  const { agregarReserva, cargando, obtenerCuposDisponibles } = useReserva();
+  const cuposDisponibles = obtenerCuposDisponibles(clase);
 
   const reservarClase = async () => {
     if (!horarioSeleccionado || cuposDisponibles <= 0 || reservandoRef.current) {
@@ -29,7 +29,6 @@ export default function DetalleClaseScreen({ route }) {
         Alert.alert('Horario ya reservado', 'Ya tienes una reserva para este horario.');
         return;
       }
-      setCuposDisponibles((cuposActuales) => cuposActuales - 1);
       Alert.alert('Reserva solicitada', `Reserva confirmada: ${clase.titulo}`);
     } catch (error) {
       Alert.alert('Error al reservar', 'No se pudo guardar la reserva. Inténtalo de nuevo.');
@@ -67,10 +66,13 @@ export default function DetalleClaseScreen({ route }) {
             </View>
           </View>
 
+          <Text style={styles.descripcion}>{clase.descripcion}</Text>
+
           <View style={styles.datos}>
             <Dato icono="cash-outline" etiqueta="Precio" valor={formatearPrecio(clase.precio)} />
             <Dato icono="time-outline" etiqueta="Duración" valor={`${clase.duracion} min`} />
             <Dato icono="people-outline" etiqueta="Cupos" valor={`${cuposDisponibles}`} />
+            <Dato icono="star-outline" etiqueta="Calificación" valor={`${clase.rating}`} />
           </View>
 
           <Text style={styles.subtitulo}>Horarios disponibles</Text>
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   modalidad: { color: colors.textoSuave, fontSize: 12 },
-  titulo: { ...typhography.titulo, fontSize: 24, marginTop: spacing.md },
+  titulo: { ...typography.titulo, fontSize: 24, marginTop: spacing.md },
   profesor: {
     flexDirection: 'row',
     alignItems: 'center',

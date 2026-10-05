@@ -1,6 +1,6 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import StartScreen from "../screens/ClasesScreen";
+import ClasesScreen from "../screens/ClasesScreen";
 import DetalleClaseScreen from "../screens/DetalleClaseScreen";
 
 const Stack = createNativeStackNavigator();
@@ -10,7 +10,7 @@ export default function ClasesStack() {
         <Stack.Navigator>
             <Stack.Screen 
                 name="Clases" 
-                component={StartScreen} 
+                component={ClasesScreen} 
                 options={{ headerShown: false }}
             />
             <Stack.Screen

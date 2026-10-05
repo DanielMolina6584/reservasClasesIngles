@@ -1,10 +1,10 @@
-export const NIVELES = ['Todos', 'Basico', 'Intermedio', 'Avanzado', 'Conversacional'];
+export const NIVELES = ['Todos', 'Básico', 'Intermedio', 'Avanzado', 'Conversacional'];
  
 export const CLASES = [
   {
     id: '1',
     titulo: 'Inglés desde cero',
-    nivel: 'Basico',
+    nivel: 'Básico',
     descripcion:
       'Construye tus primeras frases, saludos y presentaciones personales. Ideal si nunca has estudiado inglés formalmente.',
     profesor: { nombre: 'Laura Gómez', pais: 'Colombia', foto: 'https://i.pravatar.cc/200?img=45' },
@@ -109,7 +109,7 @@ export const CLASES = [
   {
     id: '8',
     titulo: 'Inglés para viajar',
-    nivel: 'Basico',
+    nivel: 'Básico',
     descripcion:
       'Aeropuerto, hotel, restaurante y emergencias. Frases listas para usar en tu próximo viaje.',
     profesor: { nombre: 'Julián Mesa', pais: 'Colombia', foto: 'https://i.pravatar.cc/200?img=51' },

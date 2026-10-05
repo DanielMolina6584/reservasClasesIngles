@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import EtiquetaNivel from './EtiquetaNivel';
-import { colors, radius, spacing, typhography } from '../theme';
+import { colors, radius, spacing, typography } from '../theme';
 import { formatearPrecio } from '../data/clases';
 
 export default function Card({ clase, onPress }) {
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   },
   imagen: { width: '100%', height: 150, backgroundColor: colors.primarioSuave },
   contenido: { padding: spacing.md },
-  titulo: { ...typhography.titulo, fontSize: 16, marginTop: spacing.sm },
+  titulo: { ...typography.titulo, fontSize: 16, marginTop: spacing.sm },
   profesor: { color: colors.textoSuave, marginTop: spacing.sm },
   precio: { color: colors.primario, fontWeight: '800', marginTop: spacing.md },
 });
