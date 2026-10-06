@@ -24,9 +24,16 @@ export default function DetalleClaseScreen({ route }) {
     reservandoRef.current = true;
     setReservando(true);
     try {
-      const agregada = await agregarReserva(clase, horarioSeleccionado);
-      if (!agregada) {
+      const { motivo, conflicto } = await agregarReserva(clase, horarioSeleccionado);
+      if (motivo === 'duplicada') {
         Alert.alert('Horario ya reservado', 'Ya tienes una reserva para este horario.');
+        return;
+      }
+      if (motivo === 'ocupado') {
+        Alert.alert(
+          'Horario ocupado',
+          `Ese horario ya está ocupado: se cruza con tu reserva de ${conflicto.titulo} (${conflicto.horario}).`,
+        );
         return;
       }
       Alert.alert('Reserva solicitada', `Reserva confirmada: ${clase.titulo}`);

@@ -50,6 +50,7 @@ src/
   navigation/              # RootNavigator (stack raíz) y TabsNavigator (pestañas propias con TabRouter)
   screens/                 # Pantallas (ClasesScreen, DetalleClaseScreen)
   theme/                   # colors, spacing, radius, typography
+  utils/                   # Funciones puras sin React (horarios: intervalos y cruces entre reservas)
 ```
 
 > Nota: desde la entrada #002 de la bitácora la carpeta es `src/components` (antes `componets`) y el tema exporta

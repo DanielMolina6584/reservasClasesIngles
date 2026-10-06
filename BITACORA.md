@@ -101,8 +101,6 @@ Reglas de uso: ver `AGENTS.md` (regla 3). Las entradas nuevas van **al final**; 
     solo la oculta (`display: 'none'`) para conservar su estado.
   - Nuevo `src/components/BarraNavegacion.js` → íconos sin texto, `accessibilityRole/Label/State`, ícono relleno + color +
     fondo en la activa, áreas de 56 dp, altura `56 + insets.bottom`, emite `tabPress`, se oculta con el teclado en Android.
-  - Nuevas `src/screens/ReservasScreen.js` (lista `useReserva().reservas`, abre DetalleClase) y `src/screens/PerfilScreen.js`
-    (nombre, correo y nivel guardados con `useAlmacenamiento('@perfil_ingles')`).
   - `src/navigation/ClasesStack.js` → renombrado con `git mv` a `RootNavigator.js`: stack raíz con `Tabs` y `DetalleClase`.
   - `App.js` → usa `RootNavigator`.
   - `src/screens/ClasesScreen.js` → `useScrollToTop`, `keyboardShouldPersistTaps="handled"`, `keyboardDismissMode="on-drag"`,
@@ -112,3 +110,50 @@ Reglas de uso: ver `AGENTS.md` (regla 3). Las entradas nuevas van **al final**; 
   - **Afecta:** hay una nueva clave en el almacenamiento, `@perfil_ingles`. Las reservas existentes no cambian.
 - **Pendientes:** probar en dispositivo. Al abrir DetalleClase desde una reserva se preselecciona el primer horario y no el
   reservado. El cambio de pestaña no tiene animación. `Platform` sin usar en `theme/index.js` (ya existía).
+
+## #005 · 2026-10-06 12:30 (UTC-5) · Análisis: validar cruces de horario entre reservas usando la duración
+- **Solicitado por:** Kevin Pineda (git: kpineda@virtualllantas.com · sesión: hcastaneda@virtualllantas.com)
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Tipo:** Pregunta (análisis y propuesta, sin implementar)
+- **Pregunta:** Analizar cómo están las clases, los horarios, las reservas, la duración y el almacenamiento, y proponer una
+  validación que impida reservar si el intervalo [inicio, inicio + duración) se cruza con otra reserva, mostrando
+  "horario ocupado". Explicar el flujo actual, dónde implementarla, cómo calcular los intervalos, cómo detectar el
+  solapamiento, qué archivos cambian y qué casos límite probar. Indicar si se puede hacer sin librerías nuevas.
+- **Respuesta:**
+  - **Flujo actual:** `DetalleClaseScreen.reservarClase()` → `useReserva().agregarReserva(clase, horario)` en
+    `ReservasContext` → arma `id = ${clase.id}-${horario}`, rechaza solo el mismo id exacto (devuelve `false`), revisa
+    cupos (lanza error) → `useAlmacenamiento.actualizar()` guarda el arreglo en AsyncStorage (`@reservas_ingles`).
+  - **Datos:** `horario` es texto semanal sin fecha (`'Mié 7:00 a.m.'`); `duracion` está en minutos en `CLASES`
+    (45, 50 o 60), pero **no se guarda en la reserva**. Hoy no se valida ningún cruce entre clases distintas.
+  - **Dónde:** en `agregarReserva` (`src/context/ReservasContext.js`), antes de guardar: es el único punto por donde pasa
+    toda reserva. Las funciones de cálculo, puras, en un archivo nuevo `src/utils/horarios.js`.
+  - **Intervalo:** minutos desde el lunes 00:00: `inicio = díaSemana * 1440 + hora24 * 60 + minutos`
+    (12 a.m. → 0, 12 p.m. → 12, p.m. suma 12); `fin = inicio + duracion`. Intervalo semiabierto [inicio, fin).
+  - **Solapamiento:** `inicioA < finB && inicioB < finA`. Con `<` estricto las clases consecutivas (10:00–11:00 y
+    11:00–12:00) no chocan. Para la vuelta de la semana (domingo noche → lunes) se compara también con ±10080 min.
+  - **Duración de reservas antiguas:** se toma `reserva.duracion` y, si no existe, se busca en `CLASES` por `claseId`
+    (o `id.split('-')[0]`, como ya hace `obtenerCuposDisponibles`).
+  - **Hallazgo:** con los datos actuales de `clases.js` **no hay ningún cruce real** entre los 19 horarios (verificado con
+    un script); solo hay 3 pares consecutivos (Mié 6:00–7:00 / 7:00, Jue 18:00–19:00 / 19:00, Sáb 10:00–11:00 / 11:00).
+    Para probar cruces parciales o contenidos hay que usar datos de prueba.
+  - **Conclusión:** se puede implementar **solo con lo existente** (JavaScript, React Context, AsyncStorage, `Alert`);
+    no se necesita ninguna librería nueva.
+- **Cambios realizados:** Ninguno en el código (solo esta entrada). Propuesta:
+  - Nuevo `src/utils/horarios.js` → `convertirHorarioAMinutos`, `obtenerIntervalo`, `intervalosSeInterponen`,
+    `buscarReservaEnConflicto`. **Por qué:** lógica pura y reutilizable, fácil de probar. **Afecta:** nada por sí solo.
+  - `src/context/ReservasContext.js` → `agregarReserva` llama a `buscarReservaEnConflicto` y guarda `duracion` en la
+    reserva nueva; devuelve un resultado (`{ agregada, motivo, conflicto }`) en lugar de `true/false`.
+    **Afecta:** las reservas nuevas tienen un campo más (`duracion`), las antiguas siguen funcionando.
+  - `src/screens/DetalleClaseScreen.js` → muestra "Horario ocupado" con la clase con la que se cruza. Es el único
+    consumidor de `agregarReserva`.
+  - `AGENTS.md` → agregar `src/utils/` a la estructura.
+- **Casos a probar:** consecutivas (10:00–11:00 y 11:00) se aceptan; parcial (10:00–11:00 y 10:30) se rechaza; inicio
+  anterior que termina dentro (9:30 de 60 min) se rechaza; contenida (10:15 de 30 min dentro de 10:00–11:00) se rechaza;
+  la que contiene a otra (9:00 de 180 min) se rechaza; misma hora otro día se acepta; duraciones distintas (45 a las
+  10:00 y 60 a las 10:45) se aceptan, (50 a las 10:00 y 10:45) se rechaza; mismo id se sigue rechazando; 12:00 p.m. y
+  12:00 a.m.; reservas antiguas sin `duracion`; horario con formato no reconocido; cruce domingo → lunes.
+- **Pendientes:**
+  - Aprobar la propuesta para implementarla.
+  - Definir si un horario guardado que no se pueda leer se ignora (propuesto: ignorarlo y registrar `console.warn`) o
+    bloquea la reserva.
+  
