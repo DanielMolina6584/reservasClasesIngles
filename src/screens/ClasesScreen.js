@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import { FlatList, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Card from '../components/Card';
 import EstadoVacio from '../components/EstadoVacio';
@@ -17,6 +18,8 @@ export default function ClasesScreen({ navigation }) {
   const { columnas, paddingHorizontal } = useResponsive();
   const [nivel, setNivel] = useState('Todos');
   const [busqueda, setBusqueda] = useState('');
+  const listaRef = useRef(null);
+  useScrollToTop(listaRef);
 
   const resultados = useMemo(() => {
     const texto = normalizar(busqueda.trim());
@@ -58,21 +61,28 @@ export default function ClasesScreen({ navigation }) {
         )}
         showsHorizontalScrollIndicator={false}
         style={styles.filtros}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.filtrosContenido}
       />
       <FlatList
+        ref={listaRef}
         data={resultados}
         key={`clases-${columnas}`}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <Card
             clase={item}
-            onPress={() => navigation.navigate('DetalleClase', { clase: item })}
+            onPress={() => {
+              Keyboard.dismiss();
+              navigation.navigate('DetalleClase', { clase: item });
+            }}
           />
         )}
         numColumns={columnas}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl, flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        contentContainerStyle={{ paddingBottom: spacing.xl, flexGrow: 1 }}
         columnWrapperStyle={columnas > 1 ? styles.fila : undefined}
         ListEmptyComponent={
           <EstadoVacio

@@ -40,14 +40,14 @@ La API de Expo/React Native cambia entre versiones: no asumas comportamientos de
 ## Estructura del proyecto
 
 ```
-App.js                     # Raíz: SafeAreaProvider > ReservaProvider > NavigationContainer
+App.js                     # Raíz: SafeAreaProvider > ReservaProvider > NavigationContainer > RootNavigator
 index.js                   # registerRootComponent
 src/
-  components/              # Componentes reutilizables (Card, EstadoVacio, EtiquetaNivel, NivelChip)
+  components/              # Componentes reutilizables (BarraNavegacion, Card, EstadoVacio, EtiquetaNivel, NivelChip)
   context/                 # Contextos globales (ReservasContext)
   data/                    # Datos estáticos (CLASES, NIVELES, formatearPrecio)
   hooks/                   # Hooks (useAlmacenamiento, useReserva, useResponsive)
-  navigation/              # Navegadores (ClasesStack)
+  navigation/              # RootNavigator (stack raíz) y TabsNavigator (pestañas propias con TabRouter)
   screens/                 # Pantallas (ClasesScreen, DetalleClaseScreen)
   theme/                   # colors, spacing, radius, typography
 ```
@@ -65,6 +65,17 @@ src/
 - Íconos solo con `Ionicons` de `@expo/vector-icons`.
 - Estado global con Context + hooks (`ReservasContext` / `useReserva`). Persistencia con `useAlmacenamiento` (AsyncStorage).
 - Las pantallas nuevas se registran en un navegador de `src/navigation/`.
+- Navegación:
+  ```
+  RootStack (native-stack)
+  ├── Tabs  → Inicio · Reservas · Perfil   (las tres usan ClasesScreen de forma temporal)
+  └── DetalleClase   (encima de las pestañas, sin barra inferior)
+  ```
+  - La barra inferior es solo de íconos (`options={{ icono, etiqueta }}`; `etiqueta` es el `accessibilityLabel`).
+  - No se usa `@react-navigation/bottom-tabs` (no está instalado): `TabsNavigator` usa `TabRouter` y `useNavigationBuilder`.
+  - Para conectar una pantalla nueva a Reservas o Perfil, cambiar su `component` en `RootNavigator.js`.
+  - Pantallas de pestaña con listas: usar `useScrollToTop(ref)` para volver arriba al pulsar la pestaña activa.
+  - El margen inferior lo maneja la barra; las pantallas de pestaña no suman `insets.bottom`.
 - Respetar el diseño responsive con `useResponsive` y las áreas seguras con `useSafeAreaInsets`.
 
 ## Comandos

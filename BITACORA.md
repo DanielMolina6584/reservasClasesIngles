@@ -67,3 +67,48 @@ Reglas de uso: ver `AGENTS.md` (regla 3). Las entradas nuevas van **al final**; 
   archivo; se retiraron manualmente. Esta entrada sigue la numeración.
 - **Cambios realizados:** Ninguno en el código (solo esta entrada).
 - **Pendientes:** Ninguno nuevo.
+
+## #003 · 2026-10-05 16:14 (UTC-5) · Propuesta de navegación inferior (Inicio, Reservas, Perfil) con íconos
+- **Solicitado por:** dmolina (git: dmolina@virtualllantas.com · sesión: hcastaneda@virtualllantas.com)
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Tipo:** Pregunta
+- **Pregunta:** Cómo organizar la navegación con una barra inferior de solo íconos con tres opciones (Inicio, Reservas,
+  Perfil), por qué esa estructura es adecuada y qué tener en cuenta para que se vea bien y funcione.
+- **Respuesta:** `@react-navigation/bottom-tabs` **no está instalado** y la regla 1 impide instalarlo sin autorización.
+  Se propone un navegador de pestañas propio con `createNavigatorFactory` + `useNavigationBuilder` + `TabRouter`, que ya
+  exporta `@react-navigation/native` 7.3.18 (verificado en `node_modules`). Estructura: un stack raíz con `Tabs` y
+  `DetalleClase`, para que el detalle (que tiene su propia barra fija de "Reservar") tape la barra de pestañas. Las
+  pestañas son Inicio (ClasesScreen), Reservas (nueva, usa `useReserva`) y Perfil (nueva, puede guardar datos con
+  `useAlmacenamiento`). Como la barra es solo de íconos: `accessibilityLabel`, `accessibilityRole="tab"`, ícono relleno
+  si está activo y de contorno si no, áreas táctiles de 48 dp e inset inferior del área segura.
+- **Cambios realizados:** Ninguno (solo propuesta).
+- **Pendientes:** Aprobar la propuesta para implementarla, o autorizar `@react-navigation/bottom-tabs` si se prefiere esa librería.
+
+## #004 · 2026-10-06 07:47 (UTC-5) · Implementación de la navegación inferior con íconos
+- **Solicitado por:** dmolina (git: dmolina@virtualllantas.com · sesión: hcastaneda@virtualllantas.com)
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Tipo:** Solicitud de cambio
+- **Pregunta:** Aplicar la propuesta #004 sin librerías nuevas: barra inferior solo de íconos (Inicio, Reservas, Perfil) con
+  accesibilidad; DetalleClase en el RootStack; pestaña activa diferenciada; áreas táctiles; safe area; altura estable; estado
+  conservado; volver arriba al repetir pestaña; teclado en ClasesScreen; Reservas con `useReserva()`; Perfil con el
+  almacenamiento existente; probar los recorridos Inicio→Detalle→volver, Inicio→Reservas, Inicio→Perfil, Reservas→Detalle y Perfil→Inicio.
+- **Respuesta:** Implementado. Verificado con `expo export` (Android e iOS), un análisis estático con `@babel/core` (sin
+  variables sin declarar ni imports inexistentes) y un banco de pruebas en Node, fuera del proyecto, que monta la app real
+  con los routers reales de React Navigation y su `useScrollToTop` (solo se simula la capa nativa): 47/47 comprobaciones
+  en teléfono y tablet. El banco se validó metiendo errores a propósito (los detecta). **No se probó en dispositivo/emulador.**
+- **Cambios realizados:**
+  - Nuevo `src/navigation/TabsNavigator.js` → navegador de pestañas con `TabRouter`; monta cada pestaña al visitarla y luego
+    solo la oculta (`display: 'none'`) para conservar su estado.
+  - Nuevo `src/components/BarraNavegacion.js` → íconos sin texto, `accessibilityRole/Label/State`, ícono relleno + color +
+    fondo en la activa, áreas de 56 dp, altura `56 + insets.bottom`, emite `tabPress`, se oculta con el teclado en Android.
+  - Nuevas `src/screens/ReservasScreen.js` (lista `useReserva().reservas`, abre DetalleClase) y `src/screens/PerfilScreen.js`
+    (nombre, correo y nivel guardados con `useAlmacenamiento('@perfil_ingles')`).
+  - `src/navigation/ClasesStack.js` → renombrado con `git mv` a `RootNavigator.js`: stack raíz con `Tabs` y `DetalleClase`.
+  - `App.js` → usa `RootNavigator`.
+  - `src/screens/ClasesScreen.js` → `useScrollToTop`, `keyboardShouldPersistTaps="handled"`, `keyboardDismissMode="on-drag"`,
+    `Keyboard.dismiss()` al abrir una clase, `paddingBottom` sin `insets.bottom`.
+  - `src/context/ReservasContext.js` → se exporta `obtenerClaseId(reserva)` (misma lógica de antes, reutilizada en Reservas).
+  - `AGENTS.md` → estructura y reglas de navegación.
+  - **Afecta:** hay una nueva clave en el almacenamiento, `@perfil_ingles`. Las reservas existentes no cambian.
+- **Pendientes:** probar en dispositivo. Al abrir DetalleClase desde una reserva se preselecciona el primer horario y no el
+  reservado. El cambio de pestaña no tiene animación. `Platform` sin usar en `theme/index.js` (ya existía).
