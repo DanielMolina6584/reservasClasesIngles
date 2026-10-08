@@ -8,6 +8,7 @@ const NOMBRE_VALIDO = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[ '-][A-Za-zÀ-ÖØ-öø-ÿ]+
 const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const TELEFONO_VALIDO = /^\+?\d{7,15}$/;
 export const FOTO_VALIDA = /^https?:\/\/\S+$/i;
+const LETRA = /[A-Za-zÀ-ÖØ-öø-ÿ]/;
 
 const crearId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -17,7 +18,11 @@ export const normalizarRegistro = (datos) => ({
     correo: datos.correo.trim().toLowerCase(),
     telefono: datos.telefono.replace(/[\s().-]/g, ''),
     foto: datos.foto.trim(),
+    contrasena: datos.contrasena,
+    confirmacion: datos.confirmacion,
 });
+
+const mismoTelefono = (a, b) => a.replace(/^\+/, '') === b.replace(/^\+/, '');
 
 const validarNombre = (valor, campo) => {
     if (!valor) {
@@ -28,6 +33,22 @@ const validarNombre = (valor, campo) => {
     }
     if (!NOMBRE_VALIDO.test(valor)) {
         return `El ${campo} solo puede tener letras.`;
+    }
+    return null;
+};
+
+const validarContrasena = (contrasena) => {
+    if (!contrasena) {
+        return 'Crea una contraseña.';
+    }
+    if (/\s/.test(contrasena)) {
+        return 'La contraseña no puede tener espacios.';
+    }
+    if (contrasena.length < 8 || contrasena.length > 64) {
+        return 'La contraseña debe tener entre 8 y 64 caracteres.';
+    }
+    if (!LETRA.test(contrasena) || !/\d/.test(contrasena)) {
+        return 'La contraseña debe tener al menos una letra y un número.';
     }
     return null;
 };
@@ -46,6 +67,10 @@ export function validarRegistro(datos) {
         foto: datos.foto && !FOTO_VALIDA.test(datos.foto)
             ? 'La foto debe ser un enlace que empiece por http:// o https://.'
             : null,
+        contrasena: validarContrasena(datos.contrasena),
+        confirmacion: !datos.confirmacion
+            ? 'Confirma tu contraseña.'
+            : datos.confirmacion !== datos.contrasena ? 'Las contraseñas no coinciden.' : null,
     };
     return Object.fromEntries(Object.entries(errores).filter(([, mensaje]) => mensaje));
 }
@@ -70,26 +95,30 @@ export function UsuarioProvider({children}) {
     const guardarSesion = useCallback((datosUsuario) => actualizarSesion(datosUsuario), [actualizarSesion]);
     const cerrarSesion = useCallback(() => actualizarSesion(null), [actualizarSesion]);
 
-    // Guarda la cuenta en @usuarios_ingles y deja la sesión iniciada con ella.
     const registrarUsuario = useCallback(async (datos) => {
         const datosNormalizados = normalizarRegistro(datos);
         const errores = validarRegistro(datosNormalizados);
-        if (!errores.correo && usuarios.some((item) => item.correo === datosNormalizados.correo)) {
-            errores.correo = 'Ya existe una cuenta con este correo.';
+        const {contrasena, confirmacion, ...perfil} = datosNormalizados;
+        if (!errores.correo && usuarios.some((item) => item?.correo === perfil.correo)) {
+            errores.correo = 'Este correo ya está registrado en otra cuenta.';
+        }
+        if (!errores.telefono && usuarios.some((item) => typeof item?.telefono === 'string' && mismoTelefono(item.telefono, perfil.telefono))) {
+            errores.telefono = 'Este teléfono ya está registrado en otra cuenta.';
         }
         if (Object.keys(errores).length > 0) {
             return {registrado: false, errores};
         }
 
-        const nuevoUsuario = {
+        const sesion = {
             id: crearId(),
-            ...datosNormalizados,
-            foto: datosNormalizados.foto || null,
+            ...perfil,
+            foto: perfil.foto || null,
             creadoEn: new Date().toISOString(),
         };
+        const nuevoUsuario = {...sesion, contrasena};
         await actualizarUsuarios([...usuarios, nuevoUsuario]);
         try {
-            await actualizarSesion(nuevoUsuario);
+            await actualizarSesion(sesion);
         } catch (error) {
             // Sin esto la cuenta quedaría guardada sin sesión y el reintento diría "Ya existe una cuenta".
             await actualizarUsuarios(usuarios).catch(() => {});

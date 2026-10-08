@@ -7,7 +7,7 @@ import useResponsive from '../hooks/useResponsive';
 import useUsuario from '../hooks/useUsuario';
 import {colors, radius, spacing, typography} from '../theme';
 
-const DATOS_VACIOS = {nombre: '', apellido: '', correo: '', telefono: '', foto: ''};
+const DATOS_VACIOS = {nombre: '', apellido: '', correo: '', telefono: '', contrasena: '', confirmacion: '', foto: ''};
 
 export default function RegistroScreen({navigation}) {
     const insets = useSafeAreaInsets();
@@ -19,14 +19,21 @@ export default function RegistroScreen({navigation}) {
     const enviandoRef = useRef(false);
     const [fotoPrevia, setFotoPrevia] = useState('');
     const [fotoFallida, setFotoFallida] = useState(null);
+    const [verContrasena, setVerContrasena] = useState(false);
     const apellidoRef = useRef(null);
     const correoRef = useRef(null);
     const telefonoRef = useRef(null);
+    const contrasenaRef = useRef(null);
+    const confirmacionRef = useRef(null);
     const fotoRef = useRef(null);
 
     const cambiar = (campo) => (texto) => {
         setDatos((actuales) => ({...actuales, [campo]: texto}));
-        setErrores((actuales) => ({...actuales, [campo]: undefined}));
+        setErrores((actuales) => ({
+            ...actuales,
+            [campo]: undefined,
+            ...(campo === 'contrasena' && {confirmacion: undefined}),
+        }));
     };
 
     const registrar = async () => {
@@ -148,8 +155,50 @@ export default function RegistroScreen({navigation}) {
                     textContentType="telephoneNumber"
                     returnKeyType="next"
                     submitBehavior="submit"
+                    onSubmitEditing={() => contrasenaRef.current?.focus()}
+                />
+                <Campo
+                    ref={contrasenaRef}
+                    etiqueta="Contraseña"
+                    error={errores.contrasena}
+                    ayuda="Mínimo 8 caracteres, con al menos una letra y un número."
+                    value={datos.contrasena}
+                    onChangeText={cambiar('contrasena')}
+                    placeholder="Crea una contraseña"
+                    secureTextEntry={!verContrasena}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="new-password"
+                    textContentType="newPassword"
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => confirmacionRef.current?.focus()}
+                />
+                <Campo
+                    ref={confirmacionRef}
+                    etiqueta="Confirmar contraseña"
+                    error={errores.confirmacion}
+                    value={datos.confirmacion}
+                    onChangeText={cambiar('confirmacion')}
+                    placeholder="Escribe de nuevo la contraseña"
+                    secureTextEntry={!verContrasena}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="new-password"
+                    textContentType="newPassword"
+                    returnKeyType="next"
+                    submitBehavior="submit"
                     onSubmitEditing={() => fotoRef.current?.focus()}
                 />
+                <Pressable
+                    style={styles.verContrasena}
+                    onPress={() => setVerContrasena((actual) => !actual)}
+                    accessibilityRole="button"
+                    hitSlop={8}
+                >
+                    <Ionicons name={verContrasena ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.primario}/>
+                    <Text style={styles.textoVerContrasena}>{verContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}</Text>
+                </Pressable>
                 <Campo
                     ref={fotoRef}
                     etiqueta="Foto de perfil (opcional)"
@@ -235,6 +284,15 @@ const styles = StyleSheet.create({
     inputConError: {borderColor: colors.peligro},
     error: {color: colors.peligro, fontSize: 12, marginTop: spacing.xs},
     ayuda: {color: colors.textoSuave, fontSize: 12, marginTop: spacing.xs},
+    verContrasena: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        gap: spacing.xs,
+        marginTop: -spacing.sm,
+        marginBottom: spacing.lg,
+    },
+    textoVerContrasena: {color: colors.primario, fontSize: 13, fontWeight: '700'},
     boton: {
         minHeight: 48,
         flexDirection: 'row',

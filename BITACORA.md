@@ -366,3 +366,32 @@ Reglas de uso: ver `AGENTS.md` (regla 3). Las entradas nuevas van **al final**; 
 - **Pendientes:** inicio de sesión; reservas por usuario (ya existe `usuario.id` para asociarlas); al editar el perfil habrá
   que actualizar la cuenta en `@usuarios_ingles` y la copia en `@usuario_sesion`; foto desde la galería requiere autorizar
   `expo-image-picker` (y declarar `expo-file-system`); probar en dispositivo.
+
+## #012 · 2026-10-08 11:55 (UTC-5) · Contraseña y validación de correo/teléfono repetidos en el registro
+- **Solicitado por:** dmolina (git: dmolina@virtualllantas.com · sesión: hcastaneda@virtualllantas.com)
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Tipo:** Solicitud de cambio
+- **Pregunta:** Agregar contraseña al registro y guardarla para el futuro inicio de sesión; antes de registrar, validar que
+  el correo y el teléfono no estén asociados a otra cuenta (mensaje y no continuar). Sin login ni edición de usuario, sin
+  librerías nuevas, reutilizando el almacenamiento. Probar datos nuevos, correo existente, teléfono existente, ambos y
+  contraseña válida/inválida.
+- **Respuesta:**
+  - **Contraseña:** campos "Contraseña" y "Confirmar contraseña" (ocultos, con "Mostrar contraseña"). Reglas: obligatoria,
+    8 a 64 caracteres, sin espacios, al menos una letra y un número; la confirmación debe coincidir. No se recorta.
+  - **Almacenamiento:** se guarda tal cual en la cuenta (`contrasena` en `@usuarios_ingles`), por decisión del equipo
+    (datos de prueba). **No** se copia a `@usuario_sesion`.
+  - **Repetidos:** el correo se compara normalizado (minúsculas, sin espacios) → "Este correo ya está registrado en otra
+    cuenta."; el teléfono se compara sin símbolos y sin el `+` inicial → "Este teléfono ya está registrado en otra
+    cuenta.". Si ambos existen se muestran los dos mensajes. No se guarda nada.
+  - **Bugs corregidos:** una cuenta dañada en `@usuarios_ingles` (`null`) rompía la comprobación de repetidos; al cambiar
+    la contraseña quedaba el aviso viejo "no coinciden" en la confirmación.
+  - **Verificación:** banco de pruebas en Node con la app real: 60/60 en teléfono, tablet e iOS (incluye los 5 escenarios
+    pedidos); validado metiendo 5 errores a propósito; análisis estático limpio; `expo export` Android e iOS sin errores;
+    `package.json` sin cambios. **No se probó en dispositivo/emulador.**
+- **Cambios realizados:**
+  - `src/context/UsuarioContext.js` → `validarContrasena`, confirmación, `mismoTelefono`, validación de teléfono repetido y
+    guardado de la contraseña solo en la cuenta.
+  - `src/screens/RegistroScreen.js` → campos de contraseña, "Mostrar contraseña" y orden de "Siguiente".
+  - `AGENTS.md` → descripción del registro.
+  - **Afecta:** las cuentas nuevas tienen `contrasena`; las creadas antes no (el login deberá contemplarlo).
+- **Limitación:** un mismo número escrito con y sin indicativo (`+57 300...` vs `300...`) se considera distinto.

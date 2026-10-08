@@ -81,8 +81,9 @@ src/
   `cerrarSesion()`, `registrarUsuario(datos)`. Se guarda con `useAlmacenamiento` en `@usuario_sesion`. Aún no hay formulario
   de inicio de sesión: "Iniciar sesión" muestra "Próximamente" (`irAIniciarSesion` en `components/SesionRequerida.js`;
   ahí se cambia cuando exista el formulario). "Registrarse" abre `RegistroScreen` (`irARegistro(navigation)`).
-- Registro: `registrarUsuario(datos)` en `UsuarioContext` normaliza, valida (`validarRegistro`), rechaza correos repetidos,
-  guarda la cuenta en `@usuarios_ingles` y deja la sesión iniciada (`@usuario_sesion`). La foto se guarda como **enlace**
+- Registro: `registrarUsuario(datos)` en `UsuarioContext` normaliza, valida (`validarRegistro`), rechaza correos y teléfonos
+  ya registrados, guarda la cuenta con la contraseña en `@usuarios_ingles` y deja la sesión iniciada (`@usuario_sesion`,
+  sin la contraseña). La contraseña se guarda **en texto plano** (decisión del equipo: datos de prueba). La foto se guarda como **enlace**
   http(s) opcional: no hay librería para elegir imágenes de la galería ni para copiar archivos (`expo-file-system` solo está
   como dependencia interna de `expo`, no se puede importar).
 - **Reservar y consultar Reservas exige sesión.** Sin sesión: `ReservasScreen` muestra `SesionRequerida`, el botón de
