@@ -9,6 +9,7 @@ const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const TELEFONO_VALIDO = /^\+?\d{7,15}$/;
 export const FOTO_VALIDA = /^https?:\/\/\S+$/i;
 const LETRA = /[A-Za-zÀ-ÖØ-öø-ÿ]/;
+const CREDENCIALES_INCORRECTAS = 'Correo o contraseña incorrectos.';
 
 const crearId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -127,6 +128,31 @@ export function UsuarioProvider({children}) {
         return {registrado: true, errores: {}};
     }, [actualizarSesion, actualizarUsuarios, usuarios]);
 
+    // El usuario es el correo. Si el correo no existe o la contraseña no coincide se responde lo mismo,
+    // para no revelar qué correos están registrados. Las cuentas sin contraseña (anteriores a la #012) no pueden entrar.
+    const iniciarSesion = useCallback(async (correo, contrasena) => {
+        const correoNormalizado = correo.trim().toLowerCase();
+        const errores = {};
+        if (!correoNormalizado) {
+            errores.correo = 'Ingresa tu correo electrónico.';
+        }
+        if (!contrasena) {
+            errores.contrasena = 'Ingresa tu contraseña.';
+        }
+        if (Object.keys(errores).length > 0) {
+            return {iniciada: false, errores, usuario: null};
+        }
+
+        const cuenta = usuarios.find((item) => item?.correo === correoNormalizado);
+        if (!cuenta || typeof cuenta.contrasena !== 'string' || cuenta.contrasena !== contrasena) {
+            return {iniciada: false, errores: {general: CREDENCIALES_INCORRECTAS}, usuario: null};
+        }
+
+        const {contrasena: _contrasena, ...sesion} = cuenta;
+        await actualizarSesion(sesion);
+        return {iniciada: true, errores: {}, usuario: sesion};
+    }, [actualizarSesion, usuarios]);
+
     const contexto = useMemo(() => ({
         usuario,
         cargando,
@@ -134,7 +160,8 @@ export function UsuarioProvider({children}) {
         guardarSesion,
         cerrarSesion,
         registrarUsuario,
-    }), [cargando, cerrarSesion, guardarSesion, registrarUsuario, sesionIniciada, usuario]);
+        iniciarSesion,
+    }), [cargando, cerrarSesion, guardarSesion, iniciarSesion, registrarUsuario, sesionIniciada, usuario]);
 
     return (
         <UsuarioContext.Provider value={contexto}>

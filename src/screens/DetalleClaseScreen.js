@@ -23,7 +23,7 @@ export default function DetalleClaseScreen({ navigation, route }) {
     Alert.alert('Inicia sesión para reservar', 'Necesitas una cuenta para reservar clases.', [
       { text: 'Ahora no', style: 'cancel' },
       { text: 'Registrarse', onPress: () => irARegistro(navigation) },
-      { text: 'Iniciar sesión', onPress: irAIniciarSesion },
+      { text: 'Iniciar sesión', onPress: () => irAIniciarSesion(navigation) },
     ]);
   };
 

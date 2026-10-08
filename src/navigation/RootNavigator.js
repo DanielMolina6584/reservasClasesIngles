@@ -6,6 +6,7 @@ import DetalleClaseScreen from "../screens/DetalleClaseScreen";
 import ReservasScreen from "../screens/ReservasScreen";
 import PerfilScreen from "../screens/PerfilScreen";
 import RegistroScreen from "../screens/RegistroScreen";
+import IniciarSesionScreen from "../screens/IniciarSesionScreen";
 
 const Stack = createNativeStackNavigator();
 const Tabs = createTabsNavigator();
@@ -49,6 +50,11 @@ export default function RootNavigator() {
                 name="Registro"
                 component={RegistroScreen}
                 options={{ title: 'Crear cuenta' }}
+            />
+            <Stack.Screen
+                name="IniciarSesion"
+                component={IniciarSesionScreen}
+                options={{ title: 'Iniciar sesión' }}
             />
         </Stack.Navigator>
     )

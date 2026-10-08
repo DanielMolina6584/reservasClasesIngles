@@ -1,7 +1,8 @@
 import React, {useRef, useState} from 'react';
-import {Alert, Image, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Alert, Image, Keyboard, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import CampoFormulario from '../components/CampoFormulario';
 import {FOTO_VALIDA} from '../context/UsuarioContext';
 import useResponsive from '../hooks/useResponsive';
 import useUsuario from '../hooks/useUsuario';
@@ -97,7 +98,7 @@ export default function RegistroScreen({navigation}) {
                 </View>
 
                 <View style={esTablet ? styles.fila : null}>
-                    <Campo
+                    <CampoFormulario
                         estilo={esTablet ? styles.campoEnFila : null}
                         etiqueta="Nombre"
                         error={errores.nombre}
@@ -111,7 +112,7 @@ export default function RegistroScreen({navigation}) {
                         submitBehavior="submit"
                         onSubmitEditing={() => apellidoRef.current?.focus()}
                     />
-                    <Campo
+                    <CampoFormulario
                         ref={apellidoRef}
                         estilo={esTablet ? styles.campoEnFila : null}
                         etiqueta="Apellido"
@@ -127,7 +128,7 @@ export default function RegistroScreen({navigation}) {
                         onSubmitEditing={() => correoRef.current?.focus()}
                     />
                 </View>
-                <Campo
+                <CampoFormulario
                     ref={correoRef}
                     etiqueta="Correo electrónico"
                     error={errores.correo}
@@ -143,7 +144,7 @@ export default function RegistroScreen({navigation}) {
                     submitBehavior="submit"
                     onSubmitEditing={() => telefonoRef.current?.focus()}
                 />
-                <Campo
+                <CampoFormulario
                     ref={telefonoRef}
                     etiqueta="Teléfono"
                     error={errores.telefono}
@@ -157,7 +158,7 @@ export default function RegistroScreen({navigation}) {
                     submitBehavior="submit"
                     onSubmitEditing={() => contrasenaRef.current?.focus()}
                 />
-                <Campo
+                <CampoFormulario
                     ref={contrasenaRef}
                     etiqueta="Contraseña"
                     error={errores.contrasena}
@@ -174,7 +175,7 @@ export default function RegistroScreen({navigation}) {
                     submitBehavior="submit"
                     onSubmitEditing={() => confirmacionRef.current?.focus()}
                 />
-                <Campo
+                <CampoFormulario
                     ref={confirmacionRef}
                     etiqueta="Confirmar contraseña"
                     error={errores.confirmacion}
@@ -199,7 +200,7 @@ export default function RegistroScreen({navigation}) {
                     <Ionicons name={verContrasena ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.primario}/>
                     <Text style={styles.textoVerContrasena}>{verContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}</Text>
                 </Pressable>
-                <Campo
+                <CampoFormulario
                     ref={fotoRef}
                     etiqueta="Foto de perfil (opcional)"
                     error={errores.foto}
@@ -225,28 +226,21 @@ export default function RegistroScreen({navigation}) {
                     <Ionicons name="person-add-outline" size={18} color="#FFFFFF"/>
                     <Text style={styles.textoBoton}>{enviando ? 'Creando cuenta...' : 'Crear cuenta'}</Text>
                 </Pressable>
+
+                <Pressable
+                    style={styles.iniciarSesion}
+                    onPress={() => navigation.replace('IniciarSesion')}
+                    accessibilityRole="button"
+                    hitSlop={8}
+                >
+                    <Text style={styles.textoIniciarSesion}>¿Ya tienes cuenta?</Text>
+                    <Text style={styles.textoVerContrasena}>Inicia sesión</Text>
+                </Pressable>
             </View>
         </ScrollView>
     );
 }
 
-function Campo({ref, etiqueta, error, ayuda, estilo, ...props}) {
-    return (
-        <View style={[styles.campo, estilo]}>
-            <Text style={styles.etiqueta}>{etiqueta}</Text>
-            <TextInput
-                ref={ref}
-                style={[styles.input, error && styles.inputConError]}
-                placeholderTextColor={colors.textoSuave}
-                accessibilityLabel={etiqueta}
-                accessibilityHint={error ?? ayuda}
-                {...props}
-            />
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            {!error && ayuda ? <Text style={styles.ayuda}>{ayuda}</Text> : null}
-        </View>
-    );
-}
 
 const styles = StyleSheet.create({
     pantalla: {flex: 1, backgroundColor: colors.fondo},
@@ -268,22 +262,6 @@ const styles = StyleSheet.create({
     mensaje: {color: colors.textoSuave, fontSize: 14, lineHeight: 20, marginTop: spacing.xs},
     fila: {flexDirection: 'row', gap: spacing.md},
     campoEnFila: {flex: 1},
-    campo: {marginBottom: spacing.lg},
-    etiqueta: {color: colors.texto, fontSize: 14, fontWeight: '700', marginBottom: spacing.sm},
-    input: {
-        minHeight: 48,
-        backgroundColor: colors.superficie,
-        borderRadius: radius.md,
-        borderWidth: 1,
-        borderColor: colors.borde,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        color: colors.texto,
-        fontSize: 15,
-    },
-    inputConError: {borderColor: colors.peligro},
-    error: {color: colors.peligro, fontSize: 12, marginTop: spacing.xs},
-    ayuda: {color: colors.textoSuave, fontSize: 12, marginTop: spacing.xs},
     verContrasena: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -293,6 +271,14 @@ const styles = StyleSheet.create({
         marginBottom: spacing.lg,
     },
     textoVerContrasena: {color: colors.primario, fontSize: 13, fontWeight: '700'},
+    iniciarSesion: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.xs,
+        marginTop: spacing.lg,
+    },
+    textoIniciarSesion: {color: colors.textoSuave, fontSize: 14},
     boton: {
         minHeight: 48,
         flexDirection: 'row',

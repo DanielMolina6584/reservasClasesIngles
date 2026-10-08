@@ -1,11 +1,10 @@
 import React from 'react';
-import {Alert, Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useNavigation} from '@react-navigation/native';
 import {colors, radius, spacing} from '../theme';
 
-export const irAIniciarSesion = () =>
-    Alert.alert('Próximamente', 'La opción "Iniciar sesión" estará disponible muy pronto.');
+export const irAIniciarSesion = (navigation) => navigation.navigate('IniciarSesion');
 
 export const irARegistro = (navigation) => navigation.navigate('Registro');
 
@@ -22,7 +21,7 @@ export default function SesionRequerida({icono = 'lock-closed-outline', titulo, 
             <View style={styles.acciones}>
                 <Pressable
                     style={({pressed}) => [styles.boton, pressed && styles.botonPresionado]}
-                    onPress={irAIniciarSesion}
+                    onPress={() => irAIniciarSesion(navigation)}
                     accessibilityRole="button"
                 >
                     <Ionicons name="log-in-outline" size={18} color="#FFFFFF"/>

@@ -43,12 +43,12 @@ La API de Expo/React Native cambia entre versiones: no asumas comportamientos de
 App.js                     # Raíz: SafeAreaProvider > UsuarioProvider > ReservaProvider > NavigationContainer > RootNavigator
 index.js                   # registerRootComponent
 src/
-  components/              # Componentes reutilizables (BarraNavegacion, Card, EstadoVacio, EtiquetaNivel, NivelChip, SesionRequerida, TarjetaReserva)
+  components/              # Componentes reutilizables (BarraNavegacion, CampoFormulario, Card, EstadoVacio, EtiquetaNivel, NivelChip, SesionRequerida, TarjetaReserva)
   context/                 # Contextos globales (ReservasContext, UsuarioContext)
   data/                    # Datos estáticos (CLASES, NIVELES, formatearPrecio)
   hooks/                   # Hooks (useAlmacenamiento, useReserva, useResponsive, useUsuario)
   navigation/              # RootNavigator (stack raíz) y TabsNavigator (pestañas propias con TabRouter)
-  screens/                 # Pantallas (ClasesScreen, DetalleClaseScreen, ReservasScreen, PerfilScreen, RegistroScreen)
+  screens/                 # Pantallas (ClasesScreen, DetalleClaseScreen, ReservasScreen, PerfilScreen, RegistroScreen, IniciarSesionScreen)
   theme/                   # colors, spacing, radius, typography
   utils/                   # Funciones puras sin React (horarios: intervalos y cruces entre reservas)
 ```
@@ -71,16 +71,21 @@ src/
   RootStack (native-stack)
   ├── Tabs  → Inicio (ClasesScreen) · Reservas (ReservasScreen) · Perfil (PerfilScreen)
   ├── DetalleClase   (encima de las pestañas, sin barra inferior)
-  └── Registro       (desde "Registrarse" en Perfil, Reservas o el aviso de DetalleClase)
+  ├── Registro       (desde "Registrarse" en Perfil, Reservas o el aviso de DetalleClase)
+  └── IniciarSesion  (desde "Iniciar sesión" en los mismos lugares; Registro e IniciarSesion se enlazan con `replace`)
   ```
   - La barra inferior es solo de íconos (`options={{ icono, etiqueta }}`; `etiqueta` es el `accessibilityLabel`).
   - No se usa `@react-navigation/bottom-tabs` (no está instalado): `TabsNavigator` usa `TabRouter` y `useNavigationBuilder`.
   - Pantallas de pestaña con listas: usar `useScrollToTop(ref)` para volver arriba al pulsar la pestaña activa.
   - El margen inferior lo maneja la barra; las pantallas de pestaña no suman `insets.bottom`.
 - Sesión de usuario: `useUsuario()` → `usuario` (objeto o `null`), `cargando`, `sesionIniciada`, `guardarSesion(usuario)`,
-  `cerrarSesion()`, `registrarUsuario(datos)`. Se guarda con `useAlmacenamiento` en `@usuario_sesion`. Aún no hay formulario
-  de inicio de sesión: "Iniciar sesión" muestra "Próximamente" (`irAIniciarSesion` en `components/SesionRequerida.js`;
-  ahí se cambia cuando exista el formulario). "Registrarse" abre `RegistroScreen` (`irARegistro(navigation)`).
+  `cerrarSesion()`, `registrarUsuario(datos)`, `iniciarSesion(correo, contrasena)`. Se guarda con `useAlmacenamiento` en
+  `@usuario_sesion`. "Iniciar sesión" abre `IniciarSesionScreen` (`irAIniciarSesion(navigation)`) y "Registrarse" abre
+  `RegistroScreen` (`irARegistro(navigation)`), ambos en `components/SesionRequerida.js`.
+- Inicio de sesión: el usuario es el **correo** (se normaliza igual que en el registro; la contraseña no se recorta).
+  `iniciarSesion` devuelve `{ iniciada, errores, usuario }`; si el correo no existe o la contraseña no coincide responde
+  siempre "Correo o contraseña incorrectos." (`errores.general`). La sesión se guarda **sin** la contraseña. Las cuentas
+  sin contraseña (creadas antes de la #012) no pueden entrar. Los formularios usan `components/CampoFormulario.js`.
 - Registro: `registrarUsuario(datos)` en `UsuarioContext` normaliza, valida (`validarRegistro`), rechaza correos y teléfonos
   ya registrados, guarda la cuenta con la contraseña en `@usuarios_ingles` y deja la sesión iniciada (`@usuario_sesion`,
   sin la contraseña). La contraseña se guarda **en texto plano** (decisión del equipo: datos de prueba). La foto se guarda como **enlace**
@@ -89,6 +94,10 @@ src/
 - **Reservar y consultar Reservas exige sesión.** Sin sesión: `ReservasScreen` muestra `SesionRequerida`, el botón de
   `DetalleClaseScreen` dice "Inicia sesión para reservar" y `agregarReserva` devuelve `{ agregada: false, motivo: 'sinSesion' }`.
   Por eso `UsuarioProvider` debe envolver a `ReservaProvider` en `App.js`.
+- **Reservas por usuario.** Cada reserva guarda `usuarioId` (`usuario.id`) y su `id` es `${usuarioId}-${claseId}-${horario}`.
+  Todas siguen en `@reservas_ingles`; `useReserva().reservas` devuelve solo las del usuario con sesión, y los duplicados,
+  cruces de horario y cancelaciones se validan solo contra ellas. Los cupos cuentan las reservas de todos los usuarios.
+  Las reservas sin `usuarioId` (anteriores) no se muestran a nadie ni ocupan cupo.
 - Respetar el diseño responsive con `useResponsive` y las áreas seguras con `useSafeAreaInsets`.
 
 ## Comandos

@@ -14,26 +14,35 @@ export const obtenerDuracionReserva = (reserva) =>
 export const ReservasContext = createContext(null);
 
 export function ReservaProvider({children}) {
+    // `todas` son las reservas de todos los usuarios del dispositivo; `reservas` solo las del usuario con sesión.
+    // Las reservas sin `usuarioId` (anteriores a las reservas por usuario) no se muestran a nadie ni ocupan cupo.
     const {
-        valor: reservas,
+        valor: todas,
         actualizar: actualizarReservas,
         listo,
     } = useAlmacenamiento(CLAVE_RESERVAS, []);
     const cargando = !listo;
-    const {sesionIniciada} = useUsuario();
+    const {usuario} = useUsuario();
+    const usuarioId = usuario?.id ?? null;
 
+    const reservas = useMemo(
+        () => (usuarioId ? todas.filter((reserva) => reserva.usuarioId === usuarioId) : []),
+        [todas, usuarioId],
+    );
+
+    // Los cupos son de la clase, así que cuentan las reservas de todos los usuarios.
     const obtenerCuposDisponibles = useCallback((clase) => {
-        const reservadas = reservas.filter((reserva) => obtenerClaseId(reserva) === clase.id).length;
+        const reservadas = todas.filter((reserva) => reserva.usuarioId && obtenerClaseId(reserva) === clase.id).length;
         return Math.max(clase.cupos - reservadas, 0);
-    }, [reservas]);
+    }, [todas]);
 
     const agregarReserva = useCallback(async (clase, horario) => {
-        if (!sesionIniciada) {
+        if (!usuarioId) {
             return {agregada: false, motivo: 'sinSesion', conflicto: null};
         }
 
-        const id = `${clase.id}-${horario}`;
-        const duplicada = reservas.find((reserva) => reserva.id === id);
+        const id = `${usuarioId}-${clase.id}-${horario}`;
+        const duplicada = reservas.find((reserva) => reserva.claseId === clase.id && reserva.horario === horario);
         if (duplicada) {
             return {agregada: false, motivo: 'duplicada', conflicto: duplicada};
         }
@@ -53,6 +62,7 @@ export function ReservaProvider({children}) {
 
         const nuevaReserva = {
             id,
+            usuarioId,
             claseId: clase.id,
             titulo: clase.titulo,
             nivel: clase.nivel,
@@ -63,18 +73,18 @@ export function ReservaProvider({children}) {
             creadoEn: new Date().toISOString(),
         };
 
-        await actualizarReservas([nuevaReserva, ...reservas]);
+        await actualizarReservas([nuevaReserva, ...todas]);
         return {agregada: true, motivo: null, conflicto: null};
-    }, [actualizarReservas, obtenerCuposDisponibles, reservas, sesionIniciada]);
+    }, [actualizarReservas, obtenerCuposDisponibles, reservas, todas, usuarioId]);
 
-    // Devuelve false si la reserva ya no existía.
+    // Solo cancela reservas del usuario con sesión. Devuelve false si la reserva ya no existía.
     const cancelarReserva = useCallback(async (id) => {
         if (!reservas.some((reserva) => reserva.id === id)) {
             return false;
         }
-        await actualizarReservas(reservas.filter((reserva) => reserva.id !== id));
+        await actualizarReservas(todas.filter((reserva) => reserva.id !== id));
         return true;
-    }, [actualizarReservas, reservas]);
+    }, [actualizarReservas, reservas, todas]);
 
     const contexto = useMemo(() => ({
         reservas,

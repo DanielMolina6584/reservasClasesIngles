@@ -395,3 +395,56 @@ Reglas de uso: ver `AGENTS.md` (regla 3). Las entradas nuevas van **al final**; 
   - `AGENTS.md` → descripción del registro.
   - **Afecta:** las cuentas nuevas tienen `contrasena`; las creadas antes no (el login deberá contemplarlo).
 - **Limitación:** un mismo número escrito con y sin indicativo (`+57 300...` vs `300...`) se considera distinto.
+
+## #013 · 2026-10-08 12:21 (UTC-5) · Análisis: inicio de sesión con usuario y contraseña
+- **Solicitado por:** Kevin Pineda (git: kpineda@virtualllantas.com · sesión: hcastaneda@virtualllantas.com)
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Tipo:** Pregunta (análisis y propuesta, sin implementar)
+- **Pregunta:** Cómo implementar el login con usuario y contraseña según la estructura actual. Analizar cómo se manejan hoy la
+  autenticación, los usuarios, las credenciales y la sesión, e indicar si se puede hacer solo con lo existente.
+- **Respuesta:**
+  - **Autenticación actual:** no hay backend ni login. Todo es local con `useAlmacenamiento` (AsyncStorage) en
+    `UsuarioContext`. "Iniciar sesión" muestra "Próximamente" (`irAIniciarSesion` en `components/SesionRequerida.js`, usado
+    también en el aviso de `DetalleClaseScreen`). La única forma de tener sesión es registrarse (el registro la inicia solo).
+  - **Usuarios y credenciales:** cuentas en `@usuarios_ingles` (`id`, `nombre`, `apellido`, `correo` normalizado y único,
+    `telefono` único, `foto`, `creadoEn`, `contrasena` en texto plano por decisión del equipo, #012). Las cuentas creadas
+    antes de la #012 no tienen `contrasena`.
+  - **Sesión:** `@usuario_sesion` guarda la copia del usuario sin contraseña; `sesionIniciada` es `true` si hay un objeto.
+    Persiste al reiniciar la app. `guardarSesion` y `cerrarSesion` ya existen. Reservas, DetalleClase y Perfil reaccionan
+    solos a `sesionIniciada`.
+  - **Usuario para el login:** el **correo** (es obligatorio, se normaliza y ya se valida que sea único). El teléfono
+    también es único, pero se propone dejarlo fuera para no complicar el primer paso.
+  - **Propuesta:**
+    - `iniciarSesion(correo, contrasena)` en `UsuarioContext`: normaliza el correo (trim + minúsculas; la contraseña no se
+      recorta), valida que ambos campos estén llenos, busca la cuenta y compara la contraseña. Si el correo no existe o la
+      contraseña no coincide responde siempre "Correo o contraseña incorrectos." (no revela cuál falló). Si coincide,
+      guarda en `@usuario_sesion` la cuenta **sin** `contrasena`. Devuelve `{ iniciada, errores }` como `registrarUsuario`.
+    - Nueva `IniciarSesionScreen` en el RootStack (título "Iniciar sesión", sin barra inferior, igual que `Registro`):
+      campos correo (`keyboardType="email-address"`, `autoCapitalize="none"`, `textContentType="username"`) y contraseña
+      (`secureTextEntry`, `textContentType="password"`, "Mostrar contraseña"), bloqueo de doble envío con ref, error general,
+      enlace "¿No tienes cuenta? Regístrate" (`navigation.replace('Registro')`). Al entrar: `goBack()` y alerta de bienvenida.
+    - Reutilizar el componente `Campo` de `RegistroScreen` moviéndolo a `src/components/CampoFormulario.js`.
+    - `irAIniciarSesion(navigation)` navega a `IniciarSesion`; se ajustan `SesionRequerida` y el aviso de `DetalleClaseScreen`.
+  - **Conclusión:** se puede implementar **solo con lo existente** (React Native, React Navigation, Context,
+    AsyncStorage). Es un login **local y de prueba**: las contraseñas quedan en texto plano en AsyncStorage (no cifrado).
+    Un login seguro de producción necesita un backend o librerías como `expo-secure-store`/`expo-crypto`, que no están
+    instaladas; por la regla 1 se debe preguntar antes de proponerlas.
+- **Cambios realizados:**
+  - `src/context/UsuarioContext.js` → `iniciarSesion`. **Afecta:** escribe `@usuario_sesion`; no cambia las cuentas.
+  - Nuevo `src/screens/IniciarSesionScreen.js` → formulario de login. **Afecta:** nueva ruta `IniciarSesion`.
+  - Nuevo `src/components/CampoFormulario.js` → `Campo` extraído. `src/screens/RegistroScreen.js` → lo importa (mismo aspecto).
+  - `src/navigation/RootNavigator.js` → ruta `IniciarSesion`.
+  - `src/components/SesionRequerida.js` y `src/screens/DetalleClaseScreen.js` → "Iniciar sesión" abre el formulario.
+  - `AGENTS.md` → estructura, navegación y descripción del login.
+- **Riesgos y observaciones:**
+  - Cuentas sin `contrasena` (anteriores a la #012) no podrán entrar **ni** volver a registrarse (el correo ya existe).
+  - Las reservas siguen siendo por dispositivo (#010): al entrar con otra cuenta en el mismo celular se verán las reservas
+    del usuario anterior.
+  - Las entradas #009 y #010 tienen fecha 2026-10-07 07:44 y 08:32, anterior a la #008 (20:38); el orden de la bitácora no
+    es cronológico en ese tramo. No se modificaron.
+- **Casos a probar:** credenciales correctas; correo con mayúsculas o espacios; contraseña incorrecta; correo inexistente
+  (mismo mensaje); campos vacíos; cuenta sin contraseña; doble toque; reiniciar la app y seguir con sesión; cerrar sesión y
+  volver a entrar; entrar desde Perfil, Reservas y el aviso de Detalle y volver a la pantalla de origen; pasar a Registro.
+- **Pendientes:** Confirmar que el usuario es el correo; decidir qué hacer con las cuentas sin
+  contraseña (propuesto: borrar los datos de prueba del dispositivo o permitir registrarse de nuevo sobre esa cuenta);
+  decidir si las reservas pasan a ser por usuario.
