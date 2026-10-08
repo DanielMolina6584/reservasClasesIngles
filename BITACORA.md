@@ -448,3 +448,50 @@ Reglas de uso: ver `AGENTS.md` (regla 3). Las entradas nuevas van **al final**; 
 - **Pendientes:** Confirmar que el usuario es el correo; decidir qué hacer con las cuentas sin
   contraseña (propuesto: borrar los datos de prueba del dispositivo o permitir registrarse de nuevo sobre esa cuenta);
   decidir si las reservas pasan a ser por usuario.
+
+## #014 · 2026-10-08 14:14 (UTC-5) · Análisis: actualizar correo y teléfono desde el perfil
+- **Solicitado por:** Kevin Pineda (git: kpineda@virtualllantas.com · sesión: hcastaneda@virtualllantas.com)
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Tipo:** Pregunta (análisis y propuesta, sin implementar)
+- **Pregunta:** Cómo permitir que el usuario con sesión actualice únicamente su correo y su teléfono desde el perfil. Analizar
+  cómo se manejan los usuarios y sus datos, cómo identificar al usuario autenticado y cómo actualizar solo esos dos campos.
+  Indicar si se puede hacer solo con lo existente.
+- **Respuesta:**
+  - **Estado actual:** después de la #013 se implementaron (sin entrada propia, por indicación del solicitante) el inicio de
+    sesión (`iniciarSesion` en `UsuarioContext`, `IniciarSesionScreen`, `CampoFormulario`) y las reservas por usuario
+    (`usuarioId` en cada reserva). Los usuarios viven en `UsuarioContext` con dos claves de AsyncStorage: `@usuarios_ingles`
+    (cuentas con `id`, `nombre`, `apellido`, `correo`, `telefono`, `foto`, `creadoEn`, `contrasena`) y `@usuario_sesion`
+    (copia del usuario sin contraseña). No existe ninguna función para modificar una cuenta. `PerfilScreen` muestra nombre y
+    correo, pero no el teléfono.
+  - **Identificación del usuario:** por `usuario.id` de la sesión, no por el correo (que es justamente lo que cambia). Con ese
+    `id` se busca la cuenta en `@usuarios_ingles`. Las reservas usan `usuarioId`, así que no se ven afectadas.
+  - **Actualización:** nueva `actualizarContacto({correo, telefono})` en `UsuarioContext`:
+    1. Exige sesión y que la cuenta exista (si no, error y se cierra la sesión).
+    2. Normaliza y valida igual que el registro; se extraen `validarCorreo`/`validarTelefono` (y su normalización) de
+       `validarRegistro` para reutilizarlos sin duplicar reglas.
+    3. Valida que el correo y el teléfono no pertenezcan a **otra** cuenta (`item.id !== usuario.id`), con `mismoTelefono`.
+    4. Si no hay cambios, responde "No hiciste cambios." sin guardar.
+    5. Copia solo `correo` y `telefono` (lista blanca; nombre, foto, `id` y contraseña no se tocan) y agrega `actualizadoEn`.
+    6. Guarda la cuenta en `@usuarios_ingles` y la copia en `@usuario_sesion` (sin contraseña); si falla la sesión, revierte
+       la cuenta, igual que `registrarUsuario`. Devuelve `{actualizado, errores}`.
+  - **Pantalla:** nueva `EditarContactoScreen` en el RootStack (título "Datos de contacto", sin barra inferior, igual que
+    Registro e IniciarSesion), con los campos precargados (`CampoFormulario`), errores por campo, bloqueo de doble envío y al
+    guardar `goBack()` + alerta "Datos actualizados". En `PerfilConSesion` se muestra el teléfono y un botón "Editar datos de
+    contacto". Si la sesión se cierra con la pantalla abierta, vuelve atrás.
+  - **Conclusión:** se puede implementar **solo con lo existente** (React Native, React Navigation, Context, AsyncStorage);
+    no se necesita ninguna librería nueva.
+- **Cambios realizados:** Ninguno en el código (solo esta entrada). Propuesta:
+  - `src/context/UsuarioContext.js` → `validarCorreo`, `validarTelefono` y `actualizarContacto`. **Afecta:** modifica la
+    cuenta y la sesión; el registro mantiene las mismas reglas.
+  - Nuevo `src/screens/EditarContactoScreen.js` → formulario de correo y teléfono. **Afecta:** nueva ruta `EditarContacto`.
+  - `src/screens/PerfilScreen.js` → teléfono visible y botón de edición. `src/navigation/RootNavigator.js` → ruta nueva.
+  - `AGENTS.md` → navegación y descripción de la edición de contacto.
+- **Riesgos y observaciones:**
+  - Al cambiar el correo, el inicio de sesión pasa a ser con el **correo nuevo**; conviene decirlo en la alerta.
+  - Se guarda en dos claves sin transacción; se mitiga revirtiendo la cuenta si falla la sesión.
+  - Sigue la limitación de la #012: `+57 300...` y `300...` se consideran teléfonos distintos.
+- **Casos a probar:** cambiar solo el correo; solo el teléfono; ambos; sin cambios; correo/teléfono de otra cuenta; el propio
+  correo con mayúsculas (no debe contar como repetido); formatos inválidos; doble toque; cerrar sesión e iniciar con el correo
+  nuevo (el viejo debe fallar); reservas intactas tras el cambio; reiniciar la app y ver los datos nuevos en Perfil.
+- **Pendientes:** aprobar la propuesta; decidir si se pide la contraseña actual para confirmar el cambio de correo
+  (recomendado en una app real; propuesto no pedirla por ahora).

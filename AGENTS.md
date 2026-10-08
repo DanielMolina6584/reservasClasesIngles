@@ -48,7 +48,7 @@ src/
   data/                    # Datos estáticos (CLASES, NIVELES, formatearPrecio)
   hooks/                   # Hooks (useAlmacenamiento, useReserva, useResponsive, useUsuario)
   navigation/              # RootNavigator (stack raíz) y TabsNavigator (pestañas propias con TabRouter)
-  screens/                 # Pantallas (ClasesScreen, DetalleClaseScreen, ReservasScreen, PerfilScreen, RegistroScreen, IniciarSesionScreen)
+  screens/                 # Pantallas (ClasesScreen, DetalleClaseScreen, ReservasScreen, PerfilScreen, RegistroScreen, IniciarSesionScreen, EditarContactoScreen)
   theme/                   # colors, spacing, radius, typography
   utils/                   # Funciones puras sin React (horarios: intervalos y cruces entre reservas)
 ```
@@ -72,7 +72,8 @@ src/
   ├── Tabs  → Inicio (ClasesScreen) · Reservas (ReservasScreen) · Perfil (PerfilScreen)
   ├── DetalleClase   (encima de las pestañas, sin barra inferior)
   ├── Registro       (desde "Registrarse" en Perfil, Reservas o el aviso de DetalleClase)
-  └── IniciarSesion  (desde "Iniciar sesión" en los mismos lugares; Registro e IniciarSesion se enlazan con `replace`)
+  ├── IniciarSesion  (desde "Iniciar sesión" en los mismos lugares; Registro e IniciarSesion se enlazan con `replace`)
+  └── EditarContacto (desde "Editar datos de contacto" en Perfil, solo con sesión)
   ```
   - La barra inferior es solo de íconos (`options={{ icono, etiqueta }}`; `etiqueta` es el `accessibilityLabel`).
   - No se usa `@react-navigation/bottom-tabs` (no está instalado): `TabsNavigator` usa `TabRouter` y `useNavigationBuilder`.
@@ -86,6 +87,12 @@ src/
   `iniciarSesion` devuelve `{ iniciada, errores, usuario }`; si el correo no existe o la contraseña no coincide responde
   siempre "Correo o contraseña incorrectos." (`errores.general`). La sesión se guarda **sin** la contraseña. Las cuentas
   sin contraseña (creadas antes de la #012) no pueden entrar. Los formularios usan `components/CampoFormulario.js`.
+- Edición de contacto: `actualizarContacto({ correo, telefono })` cambia **solo** esos dos campos de la cuenta con sesión
+  (se busca por `usuario.id`, no por correo). Usa las mismas reglas del registro (`validarCorreo`, `validarTelefono`,
+  `marcarRepetidos` excluyendo la cuenta propia), responde "No hiciste cambios." si no hay cambios, guarda `actualizadoEn`
+  y actualiza `@usuarios_ingles` y `@usuario_sesion` (si falla la sesión, revierte la cuenta). Devuelve
+  `{ actualizado, errores, correoCambiado }`. No pide la contraseña (decisión del equipo). Si cambia el correo, el login
+  pasa a ser con el correo nuevo.
 - Registro: `registrarUsuario(datos)` en `UsuarioContext` normaliza, valida (`validarRegistro`), rechaza correos y teléfonos
   ya registrados, guarda la cuenta con la contraseña en `@usuarios_ingles` y deja la sesión iniciada (`@usuario_sesion`,
   sin la contraseña). La contraseña se guarda **en texto plano** (decisión del equipo: datos de prueba). La foto se guarda como **enlace**

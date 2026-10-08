@@ -8,7 +8,7 @@ import useResponsive from '../hooks/useResponsive';
 import useUsuario from '../hooks/useUsuario';
 import {colors, radius, spacing, typography} from '../theme';
 
-export default function PerfilScreen() {
+export default function PerfilScreen({navigation}) {
     const insets = useSafeAreaInsets();
     const {paddingHorizontal} = useResponsive();
     const {usuario, cargando, sesionIniciada, cerrarSesion} = useUsuario();
@@ -19,7 +19,13 @@ export default function PerfilScreen() {
     if (cargando) {
         contenido = <ActivityIndicator size="large" color={colors.primario} style={styles.cargando}/>;
     } else if (sesionIniciada) {
-        contenido = <PerfilConSesion usuario={usuario} onCerrarSesion={cerrarSesion}/>;
+        contenido = (
+            <PerfilConSesion
+                usuario={usuario}
+                onEditarContacto={() => navigation.navigate('EditarContacto')}
+                onCerrarSesion={cerrarSesion}
+            />
+        );
     } else {
         contenido = (
             <SesionRequerida
@@ -46,7 +52,7 @@ export default function PerfilScreen() {
 }
 
 // Vista preparada para el usuario con sesión. Los datos y acciones del perfil se agregan en la siguiente etapa.
-function PerfilConSesion({usuario, onCerrarSesion}) {
+function PerfilConSesion({usuario, onEditarContacto, onCerrarSesion}) {
     const nombreCompleto = [usuario.nombre, usuario.apellido].filter(Boolean).join(' ');
     const iniciales = [usuario.nombre, usuario.apellido]
         .map((texto) => texto?.trim()[0] ?? '')
@@ -68,7 +74,16 @@ function PerfilConSesion({usuario, onCerrarSesion}) {
             </View>
             <Text style={styles.nombre}>{nombreCompleto || 'Estudiante'}</Text>
             {usuario.correo ? <Text style={styles.mensaje}>{usuario.correo}</Text> : null}
+            {usuario.telefono ? <Text style={styles.mensaje}>{usuario.telefono}</Text> : null}
             <View style={styles.acciones}>
+                <Pressable
+                    style={({pressed}) => [styles.boton, pressed && styles.botonPresionado]}
+                    onPress={onEditarContacto}
+                    accessibilityRole="button"
+                >
+                    <Ionicons name="create-outline" size={18} color="#FFFFFF"/>
+                    <Text style={styles.textoBoton}>Editar datos de contacto</Text>
+                </Pressable>
                 <Pressable
                     style={({pressed}) => [styles.boton, styles.botonSecundario, pressed && styles.botonPresionado]}
                     onPress={onCerrarSesion}

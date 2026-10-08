@@ -7,6 +7,7 @@ import ReservasScreen from "../screens/ReservasScreen";
 import PerfilScreen from "../screens/PerfilScreen";
 import RegistroScreen from "../screens/RegistroScreen";
 import IniciarSesionScreen from "../screens/IniciarSesionScreen";
+import EditarContactoScreen from "../screens/EditarContactoScreen";
 
 const Stack = createNativeStackNavigator();
 const Tabs = createTabsNavigator();
@@ -55,6 +56,11 @@ export default function RootNavigator() {
                 name="IniciarSesion"
                 component={IniciarSesionScreen}
                 options={{ title: 'Iniciar sesión' }}
+            />
+            <Stack.Screen
+                name="EditarContacto"
+                component={EditarContactoScreen}
+                options={{ title: 'Datos de contacto' }}
             />
         </Stack.Navigator>
     )

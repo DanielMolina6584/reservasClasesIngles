@@ -13,17 +13,53 @@ const CREDENCIALES_INCORRECTAS = 'Correo o contraseña incorrectos.';
 
 const crearId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
+const normalizarCorreo = (correo) => correo.trim().toLowerCase();
+const normalizarTelefono = (telefono) => telefono.replace(/[\s().-]/g, '');
+
 export const normalizarRegistro = (datos) => ({
     nombre: datos.nombre.trim().replace(/\s+/g, ' '),
     apellido: datos.apellido.trim().replace(/\s+/g, ' '),
-    correo: datos.correo.trim().toLowerCase(),
-    telefono: datos.telefono.replace(/[\s().-]/g, ''),
+    correo: normalizarCorreo(datos.correo),
+    telefono: normalizarTelefono(datos.telefono),
     foto: datos.foto.trim(),
     contrasena: datos.contrasena,
     confirmacion: datos.confirmacion,
 });
 
 const mismoTelefono = (a, b) => a.replace(/^\+/, '') === b.replace(/^\+/, '');
+
+const validarCorreo = (correo) => {
+    if (!correo) {
+        return 'Ingresa tu correo electrónico.';
+    }
+    if (!CORREO_VALIDO.test(correo)) {
+        return 'Ingresa un correo válido, por ejemplo nombre@correo.com.';
+    }
+    return null;
+};
+
+const validarTelefono = (telefono) => {
+    if (!telefono) {
+        return 'Ingresa tu teléfono.';
+    }
+    if (!TELEFONO_VALIDO.test(telefono)) {
+        return 'Ingresa un teléfono válido (de 7 a 15 dígitos).';
+    }
+    return null;
+};
+
+// Agrega a `errores` los campos que ya usa otra cuenta. `idPropio` excluye la cuenta que se está editando.
+const marcarRepetidos = (errores, usuarios, {correo, telefono}, idPropio = null) => {
+    const otras = usuarios.filter((item) => item && item.id !== idPropio);
+    if (!errores.correo && otras.some((item) => item.correo === correo)) {
+        errores.correo = 'Este correo ya está registrado en otra cuenta.';
+    }
+    if (!errores.telefono && otras.some((item) => typeof item.telefono === 'string' && mismoTelefono(item.telefono, telefono))) {
+        errores.telefono = 'Este teléfono ya está registrado en otra cuenta.';
+    }
+};
+
+const soloConError = (errores) => Object.fromEntries(Object.entries(errores).filter(([, mensaje]) => mensaje));
 
 const validarNombre = (valor, campo) => {
     if (!valor) {
@@ -59,12 +95,8 @@ export function validarRegistro(datos) {
     const errores = {
         nombre: validarNombre(datos.nombre, 'nombre'),
         apellido: validarNombre(datos.apellido, 'apellido'),
-        correo: !datos.correo
-            ? 'Ingresa tu correo electrónico.'
-            : !CORREO_VALIDO.test(datos.correo) ? 'Ingresa un correo válido, por ejemplo nombre@correo.com.' : null,
-        telefono: !datos.telefono
-            ? 'Ingresa tu teléfono.'
-            : !TELEFONO_VALIDO.test(datos.telefono) ? 'Ingresa un teléfono válido (de 7 a 15 dígitos).' : null,
+        correo: validarCorreo(datos.correo),
+        telefono: validarTelefono(datos.telefono),
         foto: datos.foto && !FOTO_VALIDA.test(datos.foto)
             ? 'La foto debe ser un enlace que empiece por http:// o https://.'
             : null,
@@ -73,7 +105,7 @@ export function validarRegistro(datos) {
             ? 'Confirma tu contraseña.'
             : datos.confirmacion !== datos.contrasena ? 'Las contraseñas no coinciden.' : null,
     };
-    return Object.fromEntries(Object.entries(errores).filter(([, mensaje]) => mensaje));
+    return soloConError(errores);
 }
 
 export const UsuarioContext = createContext(null);
@@ -100,12 +132,7 @@ export function UsuarioProvider({children}) {
         const datosNormalizados = normalizarRegistro(datos);
         const errores = validarRegistro(datosNormalizados);
         const {contrasena, confirmacion, ...perfil} = datosNormalizados;
-        if (!errores.correo && usuarios.some((item) => item?.correo === perfil.correo)) {
-            errores.correo = 'Este correo ya está registrado en otra cuenta.';
-        }
-        if (!errores.telefono && usuarios.some((item) => typeof item?.telefono === 'string' && mismoTelefono(item.telefono, perfil.telefono))) {
-            errores.telefono = 'Este teléfono ya está registrado en otra cuenta.';
-        }
+        marcarRepetidos(errores, usuarios, perfil);
         if (Object.keys(errores).length > 0) {
             return {registrado: false, errores};
         }
@@ -131,7 +158,7 @@ export function UsuarioProvider({children}) {
     // El usuario es el correo. Si el correo no existe o la contraseña no coincide se responde lo mismo,
     // para no revelar qué correos están registrados. Las cuentas sin contraseña (anteriores a la #012) no pueden entrar.
     const iniciarSesion = useCallback(async (correo, contrasena) => {
-        const correoNormalizado = correo.trim().toLowerCase();
+        const correoNormalizado = normalizarCorreo(correo);
         const errores = {};
         if (!correoNormalizado) {
             errores.correo = 'Ingresa tu correo electrónico.';
@@ -153,6 +180,48 @@ export function UsuarioProvider({children}) {
         return {iniciada: true, errores: {}, usuario: sesion};
     }, [actualizarSesion, usuarios]);
 
+    // Cambia únicamente el correo y el teléfono de la cuenta con sesión. La cuenta se busca por `id`
+    // (no por correo, que es lo que cambia). Devuelve {actualizado, errores, correoCambiado}.
+    const actualizarContacto = useCallback(async (datos) => {
+        if (!usuario) {
+            return {actualizado: false, errores: {general: 'Inicia sesión para actualizar tus datos.'}, correoCambiado: false};
+        }
+        const cuenta = usuarios.find((item) => item?.id === usuario.id);
+        if (!cuenta) {
+            await cerrarSesion();
+            return {actualizado: false, errores: {general: 'No encontramos tu cuenta. Inicia sesión de nuevo.'}, correoCambiado: false};
+        }
+
+        const contacto = {
+            correo: normalizarCorreo(datos.correo),
+            telefono: normalizarTelefono(datos.telefono),
+        };
+        const errores = soloConError({
+            correo: validarCorreo(contacto.correo),
+            telefono: validarTelefono(contacto.telefono),
+        });
+        marcarRepetidos(errores, usuarios, contacto, cuenta.id);
+        if (Object.keys(errores).length > 0) {
+            return {actualizado: false, errores, correoCambiado: false};
+        }
+        if (contacto.correo === cuenta.correo && contacto.telefono === cuenta.telefono) {
+            return {actualizado: false, errores: {general: 'No hiciste cambios.'}, correoCambiado: false};
+        }
+
+        const actualizadoEn = new Date().toISOString();
+        await actualizarUsuarios(usuarios.map((item) => (
+            item?.id === cuenta.id ? {...cuenta, ...contacto, actualizadoEn} : item
+        )));
+        try {
+            await actualizarSesion({...usuario, ...contacto, actualizadoEn});
+        } catch (error) {
+            // Sin esto la cuenta tendría los datos nuevos y la sesión los viejos.
+            await actualizarUsuarios(usuarios).catch(() => {});
+            throw error;
+        }
+        return {actualizado: true, errores: {}, correoCambiado: contacto.correo !== cuenta.correo};
+    }, [actualizarSesion, actualizarUsuarios, cerrarSesion, usuario, usuarios]);
+
     const contexto = useMemo(() => ({
         usuario,
         cargando,
@@ -161,7 +230,8 @@ export function UsuarioProvider({children}) {
         cerrarSesion,
         registrarUsuario,
         iniciarSesion,
-    }), [cargando, cerrarSesion, guardarSesion, iniciarSesion, registrarUsuario, sesionIniciada, usuario]);
+        actualizarContacto,
+    }), [actualizarContacto, cargando, cerrarSesion, guardarSesion, iniciarSesion, registrarUsuario, sesionIniciada, usuario]);
 
     return (
         <UsuarioContext.Provider value={contexto}>
