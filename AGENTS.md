@@ -48,7 +48,7 @@ src/
   data/                    # Datos estáticos (CLASES, NIVELES, formatearPrecio)
   hooks/                   # Hooks (useAlmacenamiento, useReserva, useResponsive, useUsuario)
   navigation/              # RootNavigator (stack raíz) y TabsNavigator (pestañas propias con TabRouter)
-  screens/                 # Pantallas (ClasesScreen, DetalleClaseScreen, ReservasScreen, PerfilScreen)
+  screens/                 # Pantallas (ClasesScreen, DetalleClaseScreen, ReservasScreen, PerfilScreen, RegistroScreen)
   theme/                   # colors, spacing, radius, typography
   utils/                   # Funciones puras sin React (horarios: intervalos y cruces entre reservas)
 ```
@@ -70,16 +70,21 @@ src/
   ```
   RootStack (native-stack)
   ├── Tabs  → Inicio (ClasesScreen) · Reservas (ReservasScreen) · Perfil (PerfilScreen)
-  └── DetalleClase   (encima de las pestañas, sin barra inferior)
+  ├── DetalleClase   (encima de las pestañas, sin barra inferior)
+  └── Registro       (desde "Registrarse" en Perfil, Reservas o el aviso de DetalleClase)
   ```
   - La barra inferior es solo de íconos (`options={{ icono, etiqueta }}`; `etiqueta` es el `accessibilityLabel`).
   - No se usa `@react-navigation/bottom-tabs` (no está instalado): `TabsNavigator` usa `TabRouter` y `useNavigationBuilder`.
   - Pantallas de pestaña con listas: usar `useScrollToTop(ref)` para volver arriba al pulsar la pestaña activa.
   - El margen inferior lo maneja la barra; las pantallas de pestaña no suman `insets.bottom`.
 - Sesión de usuario: `useUsuario()` → `usuario` (objeto o `null`), `cargando`, `sesionIniciada`, `guardarSesion(usuario)`,
-  `cerrarSesion()`. Se guarda con `useAlmacenamiento` en `@usuario_sesion`. Aún no hay formularios de registro ni de
-  inicio de sesión: los botones "Iniciar sesión" y "Registrarse" muestran "Próximamente" (`irAIniciarSesion` / `irARegistro`
-  en `components/SesionRequerida.js`; ahí se cambia la navegación cuando existan los formularios).
+  `cerrarSesion()`, `registrarUsuario(datos)`. Se guarda con `useAlmacenamiento` en `@usuario_sesion`. Aún no hay formulario
+  de inicio de sesión: "Iniciar sesión" muestra "Próximamente" (`irAIniciarSesion` en `components/SesionRequerida.js`;
+  ahí se cambia cuando exista el formulario). "Registrarse" abre `RegistroScreen` (`irARegistro(navigation)`).
+- Registro: `registrarUsuario(datos)` en `UsuarioContext` normaliza, valida (`validarRegistro`), rechaza correos repetidos,
+  guarda la cuenta en `@usuarios_ingles` y deja la sesión iniciada (`@usuario_sesion`). La foto se guarda como **enlace**
+  http(s) opcional: no hay librería para elegir imágenes de la galería ni para copiar archivos (`expo-file-system` solo está
+  como dependencia interna de `expo`, no se puede importar).
 - **Reservar y consultar Reservas exige sesión.** Sin sesión: `ReservasScreen` muestra `SesionRequerida`, el botón de
   `DetalleClaseScreen` dice "Inicia sesión para reservar" y `agregarReserva` devuelve `{ agregada: false, motivo: 'sinSesion' }`.
   Por eso `UsuarioProvider` debe envolver a `ReservaProvider` en `App.js`.

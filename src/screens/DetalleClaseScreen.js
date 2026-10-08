@@ -9,7 +9,7 @@ import useReserva from '../hooks/useReserva';
 import useUsuario from '../hooks/useUsuario';
 import { colors, radius, spacing, typography } from '../theme';
 
-export default function DetalleClaseScreen({ route }) {
+export default function DetalleClaseScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { clase } = route.params;
   const [horarioSeleccionado, setHorarioSeleccionado] = useState(clase.horarios[0] ?? null);
@@ -22,7 +22,7 @@ export default function DetalleClaseScreen({ route }) {
   const pedirSesion = () => {
     Alert.alert('Inicia sesión para reservar', 'Necesitas una cuenta para reservar clases.', [
       { text: 'Ahora no', style: 'cancel' },
-      { text: 'Registrarse', onPress: irARegistro },
+      { text: 'Registrarse', onPress: () => irARegistro(navigation) },
       { text: 'Iniciar sesión', onPress: irAIniciarSesion },
     ]);
   };

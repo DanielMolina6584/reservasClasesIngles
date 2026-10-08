@@ -1,15 +1,17 @@
 import React from 'react';
 import {Alert, Pressable, StyleSheet, Text, View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
+import {useNavigation} from '@react-navigation/native';
 import {colors, radius, spacing} from '../theme';
 
 export const irAIniciarSesion = () =>
     Alert.alert('Próximamente', 'La opción "Iniciar sesión" estará disponible muy pronto.');
 
-export const irARegistro = () =>
-    Alert.alert('Próximamente', 'La opción "Registrarse" estará disponible muy pronto.');
+export const irARegistro = (navigation) => navigation.navigate('Registro');
 
 export default function SesionRequerida({icono = 'lock-closed-outline', titulo, mensaje}) {
+    const navigation = useNavigation();
+
     return (
         <View style={styles.tarjeta}>
             <View style={styles.circulo}>
@@ -28,7 +30,7 @@ export default function SesionRequerida({icono = 'lock-closed-outline', titulo, 
                 </Pressable>
                 <Pressable
                     style={({pressed}) => [styles.boton, styles.botonSecundario, pressed && styles.botonPresionado]}
-                    onPress={irARegistro}
+                    onPress={() => irARegistro(navigation)}
                     accessibilityRole="button"
                 >
                     <Ionicons name="person-add-outline" size={18} color={colors.primario}/>

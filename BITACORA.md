@@ -325,3 +325,44 @@ Reglas de uso: ver `AGENTS.md` (regla 3). Las entradas nuevas van **al final**; 
     las reservas anteriores. Para separarlas hace falta un identificador de usuario, que llegará con el registro.
   - Sin formularios todavía, en la app no hay forma de iniciar sesión, así que por ahora nadie puede reservar desde la app.
 - **Pendientes:** formularios de inicio de sesión y registro; reservas por usuario; probar en dispositivo.
+
+## #011 · 2026-10-08 09:45 (UTC-5) · Registro de usuario (solo registro)
+- **Solicitado por:** dmolina (git: dmolina@virtualllantas.com · sesión: hcastaneda@virtualllantas.com)
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Tipo:** Solicitud de cambio
+- **Pregunta:** Implementar solo el registro desde "Registrarse": nombre, apellido, correo, teléfono y foto de perfil, con
+  validaciones básicas, usando el almacenamiento existente y sin librerías nuevas. Analizar cómo guardar la foto localmente
+  con lo que hay. Sin login, edición, cambio de foto, recuperación ni cierre de sesión.
+- **Respuesta:**
+  - **Foto (análisis):** no hay `expo-image-picker`, `expo-document-picker`, `expo-media-library` ni `expo-camera`;
+    `expo-file-system` existe solo como dependencia interna de `expo` (`node_modules/expo/node_modules`) y no se puede
+    importar desde `src/`. React Native no trae selector de imágenes. **No es posible elegir una foto de la galería ni
+    guardar el archivo físicamente** sin instalar algo. Se guarda el **enlace (URL http/https) opcional** como referencia, con
+    vista previa al salir del campo e iniciales si no hay foto o no carga.
+  - **Formulario:** `RegistroScreen` en el RootStack (sin barra inferior). Se abre desde "Registrarse" en Perfil, en Reservas
+    y en el aviso de DetalleClase; al terminar vuelve a la pantalla de origen.
+  - **Validaciones:** nombre y apellido obligatorios (mínimo 2 letras, solo letras con tildes, ñ, espacio, apóstrofo o guion);
+    correo obligatorio con formato válido y no repetido; teléfono obligatorio de 7 a 15 dígitos (admite +, espacios, guiones
+    y paréntesis); foto opcional (si se llena, enlace http/https). Mensaje en rojo debajo de cada campo.
+  - **Almacenamiento:** `registrarUsuario` en `UsuarioContext` normaliza los datos, guarda la cuenta en
+    `@usuarios_ingles` con `useAlmacenamiento` y deja la sesión iniciada en `@usuario_sesion` (así puede reservar sin
+    esperar al login).
+  - **Bug encontrado y corregido:** si se guardaba la cuenta pero fallaba la sesión, el reintento decía "Ya existe una
+    cuenta" y el usuario quedaba bloqueado (aún no hay login). Ahora se deshace la cuenta si falla la sesión.
+  - **Verificación:** `expo export` (Android e iOS) sin errores; análisis estático limpio; banco de pruebas en Node (fuera del
+    proyecto) con la app real: 42/42 en teléfono, tablet e iOS (datos válidos e inválidos, foto, duplicados, doble toque,
+    fallas de guardado, persistencia y entrada desde Perfil, Reservas y Detalle); validado metiendo errores a propósito.
+    `package.json` sin cambios. **No se probó en dispositivo/emulador.**
+- **Cambios realizados:**
+  - Nuevo `src/screens/RegistroScreen.js` → formulario con vista previa de la foto y componente interno `Campo`.
+  - `src/context/UsuarioContext.js` → `normalizarRegistro`, `validarRegistro`, `FOTO_VALIDA`, lista `@usuarios_ingles` y
+    `registrarUsuario`.
+  - `src/navigation/RootNavigator.js` → ruta `Registro` ("Crear cuenta").
+  - `src/components/SesionRequerida.js` → `irARegistro(navigation)` navega a `Registro` (usa `useNavigation`).
+  - `src/screens/DetalleClaseScreen.js` → la opción "Registrarse" del aviso navega al formulario.
+  - `AGENTS.md` → estructura, navegación y registro.
+  - **Afecta:** nueva clave `@usuarios_ingles`; la sesión ahora guarda el usuario completo (`id`, `nombre`, `apellido`,
+    `correo`, `telefono`, `foto`, `creadoEn`).
+- **Pendientes:** inicio de sesión; reservas por usuario (ya existe `usuario.id` para asociarlas); al editar el perfil habrá
+  que actualizar la cuenta en `@usuarios_ingles` y la copia en `@usuario_sesion`; foto desde la galería requiere autorizar
+  `expo-image-picker` (y declarar `expo-file-system`); probar en dispositivo.

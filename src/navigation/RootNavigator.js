@@ -5,6 +5,7 @@ import ClasesScreen from "../screens/ClasesScreen";
 import DetalleClaseScreen from "../screens/DetalleClaseScreen";
 import ReservasScreen from "../screens/ReservasScreen";
 import PerfilScreen from "../screens/PerfilScreen";
+import RegistroScreen from "../screens/RegistroScreen";
 
 const Stack = createNativeStackNavigator();
 const Tabs = createTabsNavigator();
@@ -43,6 +44,11 @@ export default function RootNavigator() {
                 name="DetalleClase"
                 component={DetalleClaseScreen}
                 options={{ title: 'Detalle de la clase' }}
+            />
+            <Stack.Screen
+                name="Registro"
+                component={RegistroScreen}
+                options={{ title: 'Crear cuenta' }}
             />
         </Stack.Navigator>
     )
