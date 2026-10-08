@@ -257,3 +257,71 @@ Reglas de uso: ver `AGENTS.md` (regla 3). Las entradas nuevas van **al final**; 
 - **Casos a probar:** cancelar y ver que desaparece; cancelar la última y ver el estado vacío; elegir "No, mantener";
   doble toque y dos cancelaciones seguidas; volver a reservar el mismo horario después de cancelarlo; cupos en el detalle
   después de cancelar; reiniciar la app y comprobar que la reserva cancelada no vuelve; reserva antigua sin `duracion`.
+## #009 · 2026-10-07 07:44 (UTC-5) · PerfilScreen: vista con y sin sesión
+- **Solicitado por:** dmolina (git: dmolina@virtualllantas.com · sesión: hcastaneda@virtualllantas.com)
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Tipo:** Solicitud de cambio
+- **Pregunta:** Crear solo `PerfilScreen` con dos estados: sin sesión (botones Iniciar sesión y Registrarse) y con sesión
+  (vista preparada), determinando el estado con lo que ya existe. Sin librerías nuevas. Todavía sin formularios, sin
+  edición de datos, sin foto y sin la lógica completa de autenticación. Se hizo sobre la rama `desarrollo` actualizada
+  (`1545bdf`: Reservas con cancelación), después de un rollback del solicitante.
+- **Respuesta:**
+  - **Revisión:** no existía ninguna lógica de usuario o sesión. Se reutilizó `useAlmacenamiento` y el patrón
+    `ReservasContext` + `useReserva`. Se siguió el formato del código más reciente de la rama (4 espacios, `{a}` sin espacios).
+  - **Cómo se identifica la sesión:** `UsuarioContext` lee `@usuario_sesion` de AsyncStorage. Si hay un objeto guardado,
+    `sesionIniciada` es `true`; si hay `null`, no hay nada o el dato no es un objeto, es `false`. Mientras se lee,
+    `cargando` es `true` y se muestra un indicador de carga para no mostrar por error la vista sin sesión.
+  - **Botones:** como los formularios aún no existen, "Iniciar sesión" y "Registrarse" muestran un aviso "Próximamente"
+    en lugar de navegar a rutas inexistentes.
+  - **Verificación:** `expo export` (Android e iOS) sin errores; análisis estático limpio; banco de pruebas en Node (fuera
+    del proyecto) con la app real: 24/24 en teléfono, tablet e iOS, incluyendo que Inicio, DetalleClase, Reservas y
+    la cancelación sigan funcionando; validado metiendo errores a propósito. `package.json` sin cambios.
+    **No se probó en dispositivo/emulador.**
+- **Cambios realizados:**
+  - Nuevo `src/context/UsuarioContext.js` → `usuario`, `cargando`, `sesionIniciada`, `guardarSesion(usuario)`, `cerrarSesion()`.
+  - Nuevo `src/hooks/useUsuario.js` → acceso al contexto (igual que `useReserva`).
+  - Nuevo `src/screens/PerfilScreen.js` → `PerfilSinSesion` y `PerfilConSesion` (iniciales, "Sesión iniciada", nombre,
+    correo, "Cerrar sesión").
+  - `App.js` → `UsuarioProvider` envuelve a `ReservaProvider`. `src/navigation/RootNavigator.js` → la pestaña Perfil
+    usa `PerfilScreen`.
+  - `AGENTS.md` → estructura, navegación y uso de `useUsuario`.
+  - **Afecta:** nueva clave `@usuario_sesion` en AsyncStorage. Clases, reservas, cancelación y la barra no cambian.
+- **Observaciones:** el botón "Reservar clase" de `DetalleClaseScreen` no tiene `accessibilityRole="button"` (no se
+  modificó, fuera de alcance). `package-lock.json` tiene cambios locales sin commit previos a esta tarea.
+- **Pendientes (siguiente etapa):** formularios de registro e inicio de sesión (llamarán a `guardarSesion`), cambiar los
+  avisos "Próximamente" por la navegación a esos formularios, completar la vista con sesión y probar en dispositivo.
+
+## #010 · 2026-10-07 08:32 (UTC-5) · Control de acceso: reservar y consultar Reservas exige sesión
+- **Solicitado por:** dmolina (git: dmolina@virtualllantas.com · sesión: hcastaneda@virtualllantas.com)
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Tipo:** Solicitud de cambio
+- **Pregunta:** Usar la identificación de sesión existente para que reservar una clase y consultar la pantalla de Reservas
+  exija estar registrado e iniciar sesión. Sin sesión: no reservar, no ver Reservas y mostrar una opción para iniciar sesión
+  o registrarse. Con sesión: funcionamiento normal. Sin librerías nuevas, sin otro sistema de autenticación y sin tocar la
+  creación o edición del perfil. Probar ambos escenarios.
+- **Respuesta:**
+  - Se usa `useUsuario()` (`sesionIniciada`, `cargando`) de `UsuarioContext`; no se creó otro sistema.
+  - **Reservas:** sin sesión muestra el aviso "Inicia sesión para ver tus reservas" con "Iniciar sesión" y "Registrarse"; no
+    se renderiza la lista, aunque haya reservas guardadas en el dispositivo.
+  - **Reservar:** el detalle de la clase se puede ver, pero el botón dice "Inicia sesión para reservar" y abre un aviso con
+    "Ahora no", "Registrarse" e "Iniciar sesión". Además, `agregarReserva` rechaza la reserva sin sesión
+    (`motivo: 'sinSesion'`), así que queda bloqueada aunque otra pantalla la llame.
+  - **Mientras se lee la sesión:** Reservas muestra cargando y el botón del detalle "Cargando..." deshabilitado.
+  - **Verificación:** `expo export` (Android e iOS) sin errores; análisis estático limpio; banco de pruebas en Node (fuera
+    del proyecto) con la app real: 27/27 en teléfono, tablet e iOS, con y sin sesión, cerrando sesión con las pantallas
+    abiertas y mientras carga. Se comprobó que con una sola de las dos protecciones (pantalla o contexto) la reserva sigue
+    bloqueada, y que sin ambas las pruebas fallan. `package.json` sin cambios. **No se probó en dispositivo/emulador.**
+- **Cambios realizados:**
+  - Nuevo `src/components/SesionRequerida.js` → aviso reutilizable con "Iniciar sesión" y "Registrarse"; exporta
+    `irAIniciarSesion` e `irARegistro` (hoy "Próximamente"), único lugar a cambiar cuando existan los formularios.
+  - `src/context/ReservasContext.js` → `agregarReserva` exige sesión.
+  - `src/screens/ReservasScreen.js` → muestra `SesionRequerida` sin sesión.
+  - `src/screens/DetalleClaseScreen.js` → botón "Inicia sesión para reservar" y aviso sin sesión; se agregó
+    `accessibilityRole="button"` al botón de reservar.
+  - `src/screens/PerfilScreen.js` → la vista sin sesión usa `SesionRequerida` (mismo aspecto; se quitó el código duplicado).
+  - `AGENTS.md` → regla de acceso y nuevo componente.
+- **Observaciones:**
+  - Las reservas siguen guardadas **por dispositivo, no por usuario**: si otra persona inicia sesión en el mismo celular, verá
+    las reservas anteriores. Para separarlas hace falta un identificador de usuario, que llegará con el registro.
+  - Sin formularios todavía, en la app no hay forma de iniciar sesión, así que por ahora nadie puede reservar desde la app.
+- **Pendientes:** formularios de inicio de sesión y registro; reservas por usuario; probar en dispositivo.

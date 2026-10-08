@@ -4,13 +4,11 @@ import createTabsNavigator from "./TabsNavigator";
 import ClasesScreen from "../screens/ClasesScreen";
 import DetalleClaseScreen from "../screens/DetalleClaseScreen";
 import ReservasScreen from "../screens/ReservasScreen";
+import PerfilScreen from "../screens/PerfilScreen";
 
 const Stack = createNativeStackNavigator();
 const Tabs = createTabsNavigator();
 
-// `icono` es el nombre base de Ionicons (activo: relleno, inactivo: `-outline`).
-// `etiqueta` no se muestra: es el accessibilityLabel del ícono.
-// Perfil usa ClasesScreen de forma temporal hasta que exista su pantalla.
 function PestanasPrincipales() {
     return (
         <Tabs.Navigator initialRouteName="Inicio" backBehavior="firstRoute">
@@ -26,15 +24,13 @@ function PestanasPrincipales() {
             />
             <Tabs.Screen
                 name="Perfil"
-                component={ClasesScreen}
+                component={PerfilScreen}
                 options={{ icono: 'person', etiqueta: 'Perfil' }}
             />
         </Tabs.Navigator>
     )
 }
 
-// DetalleClase vive fuera de las pestañas para que se abra encima de la barra inferior
-// y se pueda llegar a ella desde Inicio o desde Reservas.
 export default function RootNavigator() {
     return (
         <Stack.Navigator>

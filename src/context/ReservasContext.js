@@ -1,6 +1,7 @@
 import React, {createContext, useCallback, useMemo} from 'react';
 import {CLASES} from '../data/clases';
 import useAlmacenamiento from '../hooks/useAlmacenamiento';
+import useUsuario from '../hooks/useUsuario';
 import {buscarReservaEnConflicto, obtenerIntervalo} from '../utils/horarios';
 
 const CLAVE_RESERVAS = '@reservas_ingles';
@@ -19,6 +20,7 @@ export function ReservaProvider({children}) {
         listo,
     } = useAlmacenamiento(CLAVE_RESERVAS, []);
     const cargando = !listo;
+    const {sesionIniciada} = useUsuario();
 
     const obtenerCuposDisponibles = useCallback((clase) => {
         const reservadas = reservas.filter((reserva) => obtenerClaseId(reserva) === clase.id).length;
@@ -26,6 +28,10 @@ export function ReservaProvider({children}) {
     }, [reservas]);
 
     const agregarReserva = useCallback(async (clase, horario) => {
+        if (!sesionIniciada) {
+            return {agregada: false, motivo: 'sinSesion', conflicto: null};
+        }
+
         const id = `${clase.id}-${horario}`;
         const duplicada = reservas.find((reserva) => reserva.id === id);
         if (duplicada) {
@@ -59,7 +65,7 @@ export function ReservaProvider({children}) {
 
         await actualizarReservas([nuevaReserva, ...reservas]);
         return {agregada: true, motivo: null, conflicto: null};
-    }, [actualizarReservas, obtenerCuposDisponibles, reservas]);
+    }, [actualizarReservas, obtenerCuposDisponibles, reservas, sesionIniciada]);
 
     // Devuelve false si la reserva ya no existía.
     const cancelarReserva = useCallback(async (id) => {

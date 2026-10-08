@@ -3,10 +3,12 @@ import {ActivityIndicator, Alert, FlatList, StyleSheet, Text, View} from 'react-
 import {useScrollToTop} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import EstadoVacio from '../components/EstadoVacio';
+import SesionRequerida from '../components/SesionRequerida';
 import TarjetaReserva from '../components/TarjetaReserva';
 import {obtenerDuracionReserva} from '../context/ReservasContext';
 import useReserva from '../hooks/useReserva';
 import useResponsive from '../hooks/useResponsive';
+import useUsuario from '../hooks/useUsuario';
 import {convertirHorarioAMinutos} from '../utils/horarios';
 import {colors, spacing, typography} from '../theme';
 
@@ -17,6 +19,7 @@ export default function ReservasScreen() {
     const insets = useSafeAreaInsets();
     const {columnas, paddingHorizontal} = useResponsive();
     const {reservas, cargando, cancelarReserva} = useReserva();
+    const {sesionIniciada, cargando: cargandoSesion} = useUsuario();
     const listaRef = useRef(null);
     useScrollToTop(listaRef);
     // Una sola cancelación a la vez: cancelarReserva parte del arreglo actual y dos seguidas
@@ -67,9 +70,17 @@ export default function ReservasScreen() {
     return (
         <View style={[styles.pantalla, {paddingTop: insets.top + spacing.md, paddingHorizontal}]}>
             <Text style={styles.titulo}>Mis reservas</Text>
-            {cargando ? (
+            {cargando || cargandoSesion ? (
                 <View style={styles.cargando}>
                     <ActivityIndicator size="large" color={colors.primario}/>
+                </View>
+            ) : !sesionIniciada ? (
+                <View style={styles.sinSesion}>
+                    <SesionRequerida
+                        icono="calendar-outline"
+                        titulo="Inicia sesión para ver tus reservas"
+                        mensaje="Necesitas una cuenta para reservar clases y consultar tus reservas."
+                    />
                 </View>
             ) : (
                 <FlatList
@@ -107,5 +118,6 @@ const styles = StyleSheet.create({
     pantalla: {flex: 1, backgroundColor: colors.fondo},
     titulo: {...typography.titulo, marginBottom: spacing.lg},
     cargando: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+    sinSesion: {width: '100%', maxWidth: 520, alignSelf: 'center'},
     fila: {gap: spacing.md},
 });

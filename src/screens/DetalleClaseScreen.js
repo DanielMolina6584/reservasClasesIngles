@@ -3,8 +3,10 @@ import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import EtiquetaNivel from '../components/EtiquetaNivel';
+import { irAIniciarSesion, irARegistro } from '../components/SesionRequerida';
 import { formatearPrecio } from '../data/clases';
 import useReserva from '../hooks/useReserva';
+import useUsuario from '../hooks/useUsuario';
 import { colors, radius, spacing, typography } from '../theme';
 
 export default function DetalleClaseScreen({ route }) {
@@ -14,9 +16,22 @@ export default function DetalleClaseScreen({ route }) {
   const [reservando, setReservando] = useState(false);
   const reservandoRef = useRef(false);
   const { agregarReserva, cargando, obtenerCuposDisponibles } = useReserva();
+  const { sesionIniciada, cargando: cargandoSesion } = useUsuario();
   const cuposDisponibles = obtenerCuposDisponibles(clase);
 
+  const pedirSesion = () => {
+    Alert.alert('Inicia sesión para reservar', 'Necesitas una cuenta para reservar clases.', [
+      { text: 'Ahora no', style: 'cancel' },
+      { text: 'Registrarse', onPress: irARegistro },
+      { text: 'Iniciar sesión', onPress: irAIniciarSesion },
+    ]);
+  };
+
   const reservarClase = async () => {
+    if (!sesionIniciada) {
+      pedirSesion();
+      return;
+    }
     if (!horarioSeleccionado || cuposDisponibles <= 0 || reservandoRef.current) {
       return;
     }
@@ -25,6 +40,10 @@ export default function DetalleClaseScreen({ route }) {
     setReservando(true);
     try {
       const { motivo, conflicto } = await agregarReserva(clase, horarioSeleccionado);
+      if (motivo === 'sinSesion') {
+        pedirSesion();
+        return;
+      }
       if (motivo === 'duplicada') {
         Alert.alert('Horario ya reservado', 'Ya tienes una reserva para este horario.');
         return;
@@ -115,14 +134,17 @@ export default function DetalleClaseScreen({ route }) {
         <Pressable
           style={[styles.boton, cuposDisponibles === 0 && styles.botonDeshabilitado]}
           onPress={reservarClase}
-          disabled={cargando || reservando || cuposDisponibles === 0 || !horarioSeleccionado}
+          disabled={cargando || cargandoSesion || reservando || cuposDisponibles === 0 || !horarioSeleccionado}
+          accessibilityRole="button"
         >
           <Text style={styles.textoBoton}>
             {cuposDisponibles === 0
               ? 'Agotado'
-              : reservando || cargando
+              : reservando || cargando || cargandoSesion
                 ? 'Cargando...'
-                : 'Reservar clase'}
+                : sesionIniciada
+                  ? 'Reservar clase'
+                  : 'Inicia sesión para reservar'}
           </Text>
         </Pressable>
       </View>
