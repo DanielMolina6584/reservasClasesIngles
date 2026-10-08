@@ -3,13 +3,14 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import createTabsNavigator from "./TabsNavigator";
 import ClasesScreen from "../screens/ClasesScreen";
 import DetalleClaseScreen from "../screens/DetalleClaseScreen";
+import ReservasScreen from "../screens/ReservasScreen";
 
 const Stack = createNativeStackNavigator();
 const Tabs = createTabsNavigator();
 
 // `icono` es el nombre base de Ionicons (activo: relleno, inactivo: `-outline`).
 // `etiqueta` no se muestra: es el accessibilityLabel del ícono.
-// Reservas y Perfil usan ClasesScreen de forma temporal hasta que existan sus pantallas.
+// Perfil usa ClasesScreen de forma temporal hasta que exista su pantalla.
 function PestanasPrincipales() {
     return (
         <Tabs.Navigator initialRouteName="Inicio" backBehavior="firstRoute">
@@ -20,7 +21,7 @@ function PestanasPrincipales() {
             />
             <Tabs.Screen
                 name="Reservas"
-                component={ClasesScreen}
+                component={ReservasScreen}
                 options={{ icono: 'calendar', etiqueta: 'Reservas' }}
             />
             <Tabs.Screen

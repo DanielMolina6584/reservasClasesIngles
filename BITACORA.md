@@ -138,7 +138,7 @@ Reglas de uso: ver `AGENTS.md` (regla 3). Las entradas nuevas van **al final**; 
     Para probar cruces parciales o contenidos hay que usar datos de prueba.
   - **Conclusión:** se puede implementar **solo con lo existente** (JavaScript, React Context, AsyncStorage, `Alert`);
     no se necesita ninguna librería nueva.
-- **Cambios realizados:** Ninguno en el código (solo esta entrada). Propuesta:
+- **Cambios realizados:**
   - Nuevo `src/utils/horarios.js` → `convertirHorarioAMinutos`, `obtenerIntervalo`, `intervalosSeInterponen`,
     `buscarReservaEnConflicto`. **Por qué:** lógica pura y reutilizable, fácil de probar. **Afecta:** nada por sí solo.
   - `src/context/ReservasContext.js` → `agregarReserva` llama a `buscarReservaEnConflicto` y guarda `duracion` en la
@@ -153,7 +153,59 @@ Reglas de uso: ver `AGENTS.md` (regla 3). Las entradas nuevas van **al final**; 
   10:00 y 60 a las 10:45) se aceptan, (50 a las 10:00 y 10:45) se rechaza; mismo id se sigue rechazando; 12:00 p.m. y
   12:00 a.m.; reservas antiguas sin `duracion`; horario con formato no reconocido; cruce domingo → lunes.
 - **Pendientes:**
-  - Aprobar la propuesta para implementarla.
   - Definir si un horario guardado que no se pueda leer se ignora (propuesto: ignorarlo y registrar `console.warn`) o
     bloquea la reserva.
   
+## #006 · 2026-10-07 20:15 (UTC-5) · Revisión general del estado del proyecto
+- **Solicitado por:** Kevin Pineda (git: kpineda@virtualllantas.com · sesión: hcastaneda@virtualllantas.com)
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Tipo:** Revisión
+- **Pregunta:** Investigar el proyecto (estructura, estado actual y funcionamiento).
+- **Respuesta:** Se revisaron `AGENTS.md`, la bitácora, `package.json`, `app.json`, `App.js`, todo `src/` y git.
+  La validación de cruces propuesta en la #005 **ya está implementada** (commit `d0787a9`: `src/utils/horarios.js`,
+  `agregarReserva` devuelve `{ agregada, motivo, conflicto }`, alerta "Horario ocupado"), pero no tiene entrada de implementación.
+  Observaciones (no corregidas):
+  1. `clases.js` ahora sí tiene cruces reales (Lun 7:00 a.m. en clases 1 y 4; Jue 6:00 p.m. en 2 y 7; Sáb 10:00/10:15;
+     Lun 8:00/8:30 p.m.), distinto a lo que dice la #005; puede que sean datos de prueba.
+  2. Reservas y Perfil siguen usando `ClasesScreen`; no existe la clave `@perfil_ingles` que menciona la #004, y
+     `obtenerClaseId` ya no se exporta.
+  3. Los cupos siguen contándose por clase (no por horario) y solo con las reservas locales del usuario.
+  4. `EtiquetaNivel` usa `colors.background` (gris) sin `borderRadius` ni `borderColor`; el chip activo también es gris.
+  5. `package-lock.json` tiene cambios sin commit (173+/198-).
+  6. `Platform` sigue sin usarse en `theme/index.js`; el script `web` sigue en `package.json` sin sus dependencias.
+- **Cambios realizados:** Ninguno en el código (solo esta entrada).
+- **Pendientes:** confirmar si los cruces en `clases.js` son intencionales; registrar la implementación de la #005;
+  revisar el cambio pendiente en `package-lock.json`.
+
+## #007 · 2026-10-07 20:17 (UTC-5) · Análisis: nueva pantalla de Reservas (solo visualización)
+- **Solicitado por:** Kevin Pineda (git: kpineda@virtualllantas.com · sesión: hcastaneda@virtualllantas.com)
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Tipo:** Pregunta (análisis y propuesta, sin implementar)
+- **Pregunta:** Cómo implementar una pantalla de Reservas que por ahora solo muestre las reservas existentes (sin abrir el
+  detalle ni agregar funciones). Analizar cómo se manejan y obtienen las reservas, qué se puede reutilizar, dónde integrarla
+  en la navegación e indicar si se puede hacer solo con las librerías y estructuras existentes.
+- **Respuesta:**
+  - **Manejo actual:** las reservas viven en `ReservasContext` y se guardan en AsyncStorage (`@reservas_ingles`) con
+    `useAlmacenamiento`. Se leen con `useReserva()`, que expone `reservas` (arreglo, la más reciente primero) y `cargando`.
+    Cada reserva guarda `id`, `claseId`, `titulo`, `nivel`, `profesor` (texto), `precio`, `horario`, `creadoEn` y, desde el
+    commit `d0787a9`, `duracion` (las anteriores no la tienen; se obtiene de `CLASES` como hace `obtenerDuracionReserva`).
+  - **Reutilizable:** `useReserva`, `EstadoVacio` (lista vacía), `EtiquetaNivel`, `formatearPrecio`, `useResponsive`
+    (columnas y padding), `useScrollToTop` y `useSafeAreaInsets` (mismo patrón que `ClasesScreen`), el tema e `Ionicons`.
+    `convertirHorarioAMinutos` (`utils/horarios.js`) sirve para ordenar por día y hora de la semana.
+    `Card` **no** se reutiliza tal cual: espera un objeto `clase` (`imagen`, `profesor.nombre`) y es presionable; la reserva
+    no tiene imagen y `profesor` es texto.
+  - **Navegación:** la pestaña `Reservas` ya existe en `RootNavigator.js` con `ClasesScreen` temporal; basta con cambiar su
+    `component` por `ReservasScreen`. No se navega a `DetalleClase`.
+  - **Conclusión:** se puede implementar **solo con lo existente** (React Native, React Navigation, Context, AsyncStorage,
+    `@expo/vector-icons`); no se necesita ninguna librería nueva.
+- **Cambios realizados:**
+  - Nuevo `src/screens/ReservasScreen.js` → título, `FlatList` de reservas ordenadas por horario semanal (`useMemo`), estado
+    de carga mientras `cargando`, `EstadoVacio` si no hay reservas, columnas según `useResponsive`, `useScrollToTop`,
+    `paddingTop` con `insets.top` y sin `insets.bottom`. **Por qué:** pantalla propia de la pestaña. **Afecta:** solo lectura;
+    no cambia datos guardados.
+  - Nuevo `src/components/TarjetaReserva.js` → tarjeta no presionable con `EtiquetaNivel`, título, profesor, horario,
+    duración y precio. **Por qué:** `Card` no encaja con la forma de la reserva. **Afecta:** nada fuera de la pantalla.
+  - `src/context/ReservasContext.js` → exportar `obtenerDuracionReserva` (sin cambiar su lógica) para mostrar la duración
+    de reservas antiguas. **Afecta:** nada en el comportamiento.
+  - `src/navigation/RootNavigator.js` → pestaña `Reservas` usa `ReservasScreen`. **Afecta:** la pestaña deja de mostrar el catálogo.
+  - `AGENTS.md` → actualizar estructura y nota de navegación (Reservas ya no es temporal).

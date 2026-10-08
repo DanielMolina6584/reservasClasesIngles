@@ -7,7 +7,7 @@ const CLAVE_RESERVAS = '@reservas_ingles';
 
 const obtenerClaseId = (reserva) => reserva.claseId ?? reserva.id.split('-')[0];
 
-const obtenerDuracionReserva = (reserva) =>
+export const obtenerDuracionReserva = (reserva) =>
   reserva.duracion ?? CLASES.find((clase) => clase.id === obtenerClaseId(reserva))?.duracion;
 
 export const ReservasContext = createContext(null);
