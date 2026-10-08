@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import {Platform} from "react-native";
 
 export const colors = {
     fondo: '#f1e3e3',
@@ -8,26 +8,27 @@ export const colors = {
     borde: 'rgb(130, 130, 215)',
     primario: '#6C5CE7',
     primarioSuave: '#ede9fe',
+    peligro: '#dc2626',
     background: '#8d8d8d',
 }
 export const spacing = {
-    xs:4,
-    sm:8,
-    md:12,
-    lg:16,
-    xl:18,
-    xxl:32,
+    xs: 4,
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 18,
+    xxl: 32,
 }
 
 export const radius = {
-    sm:8,
-    md:14,
-    lg:20,
+    sm: 8,
+    md: 14,
+    lg: 20,
     full: 999
 }
 
 export const typography = {
-    titulo: { fontSize: 20, fontWeight: '800', color: colors.texto },
+    titulo: {fontSize: 20, fontWeight: '800', color: colors.texto},
 }
 
 export default {colors, spacing, radius, typography}
